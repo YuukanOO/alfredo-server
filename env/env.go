@@ -62,7 +62,7 @@ func LoadAdapters(path string) error {
 	data, err := ioutil.ReadFile(path)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	return json.Unmarshal(data, &current.Adapters)

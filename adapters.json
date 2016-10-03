@@ -1,0 +1,9 @@
+{
+    "tv-samsung": {
+        "name": "Samsung TV",
+        "category": "tv",
+        "commands": {
+            "key": "rtv $model $ip $key"
+        }
+    }
+}

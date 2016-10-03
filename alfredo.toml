@@ -1,0 +1,7 @@
+[server]
+listen=":8080"
+remote=""
+allowedOrigins=["*"]
+
+[database]
+urls=["mongodb://127.0.0.1:27017/alfredo"]

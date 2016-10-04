@@ -4,5 +4,6 @@ package domain
 type Adapter struct {
 	Name     string
 	Category string
+	Config   map[string]interface{}
 	Commands map[string]string
 }

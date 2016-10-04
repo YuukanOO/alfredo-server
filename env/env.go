@@ -21,6 +21,11 @@ type ServerConfig struct {
 	AllowedOrigins []string
 }
 
+// SecurityConfig contains settings related to security.
+type SecurityConfig struct {
+	Secret string
+}
+
 // DatabaseConfig represents the current env settings relatives
 // to the mongodb settings.
 type DatabaseConfig struct {
@@ -32,6 +37,7 @@ type DatabaseConfig struct {
 type Env struct {
 	Server   *ServerConfig
 	Database *DatabaseConfig
+	Security *SecurityConfig
 	Adapters map[string]domain.Adapter
 }
 
@@ -57,7 +63,7 @@ func LoadFromFile(path string) error {
 	return err
 }
 
-// LoadAdapters tries to load the smart adapters from a JSON files.
+// LoadAdapters tries to load the smart adapters from a JSON file.
 func LoadAdapters(path string) error {
 	data, err := ioutil.ReadFile(path)
 
@@ -74,6 +80,8 @@ func Cleanup() {
 }
 
 // GetSession retrieve a session to the database. Don't forget to close it when you're done.
-func (db *DatabaseConfig) GetSession() *mgo.Session {
-	return db.session.Clone()
+func (db *DatabaseConfig) GetSession() (*mgo.Session, *mgo.Database) {
+	cloned := db.session.Clone()
+
+	return cloned, cloned.DB("")
 }

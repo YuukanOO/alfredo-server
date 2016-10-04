@@ -2,6 +2,10 @@
     "tv-samsung": {
         "name": "Samsung TV",
         "category": "tv",
+        "config": {
+            "ip": "string",
+            "model": "string"
+        },
         "commands": {
             "key": "rtv $model $ip $key"
         }

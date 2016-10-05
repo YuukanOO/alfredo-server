@@ -15,6 +15,9 @@ import (
 const authHeaderValue = "Authorization"
 const bearerHeaderValue = "Bearer "
 
+// ControllerKey in the context
+const ControllerKey = "controller"
+
 // Auth restrict access to valid tokens.
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -35,7 +38,7 @@ func Auth() gin.HandlerFunc {
 				claims, _ := token.Claims.(jwt.MapClaims)
 				idStr := claims["sub"].(string)
 
-				c.Set("controller", domain.Controller{
+				c.Set(ControllerKey, domain.Controller{
 					ID: bson.ObjectIdHex(idStr),
 				})
 				c.Next()

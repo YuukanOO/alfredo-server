@@ -3,10 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"gopkg.in/mgo.v2/bson"
+	mgo "gopkg.in/mgo.v2"
 
 	"github.com/YuukanOO/alfredo/domain"
-	"github.com/YuukanOO/alfredo/env"
+	"github.com/YuukanOO/alfredo/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,9 +20,8 @@ func createRoom(c *gin.Context) {
 	if err := c.BindJSON(&params); err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 	} else {
-		controller := c.MustGet("controller").(domain.Controller)
-		session, db := env.Current().Database.GetSession()
-		defer session.Close()
+		controller := c.MustGet(middlewares.ControllerKey).(domain.Controller)
+		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 
 		room, err := controller.CreateRoom(domain.RoomByName(db), params.Name)
 
@@ -39,8 +38,7 @@ func createRoom(c *gin.Context) {
 }
 
 func getAllRooms(c *gin.Context) {
-	session, db := env.Current().Database.GetSession()
-	defer session.Close()
+	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 
 	rooms, err := domain.RoomsAll(db)()
 
@@ -52,12 +50,10 @@ func getAllRooms(c *gin.Context) {
 }
 
 func removeRoom(c *gin.Context) {
-	id := bson.ObjectIdHex(c.Param("id"))
+	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+	room := c.MustGet(middlewares.RoomKey).(*domain.Room)
 
-	session, db := env.Current().Database.GetSession()
-	defer session.Close()
-
-	if err := domain.RoomRemove(db)(id); err != nil {
+	if err := domain.RoomRemove(db)(room.ID); err != nil {
 		c.AbortWithError(http.StatusNotFound, err)
 	} else {
 		c.AbortWithStatus(http.StatusOK)

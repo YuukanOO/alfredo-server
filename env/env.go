@@ -38,7 +38,7 @@ type Env struct {
 	Server   *ServerConfig
 	Database *DatabaseConfig
 	Security *SecurityConfig
-	Adapters map[string]domain.Adapter
+	Adapters map[string]*domain.Adapter
 }
 
 var current Env
@@ -71,7 +71,18 @@ func LoadAdapters(path string) error {
 		return err
 	}
 
-	return json.Unmarshal(data, &current.Adapters)
+	if err = json.Unmarshal(data, &current.Adapters); err != nil {
+		return err
+	}
+
+	for k, v := range current.Adapters {
+		v.ID = k
+		if err = v.ParseCommands(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Cleanup necessary stuff such as handles.

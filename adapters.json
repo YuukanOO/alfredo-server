@@ -7,7 +7,7 @@
             "model": "string"
         },
         "commands": {
-            "key": "rtv $model $ip $key"
+            "key": "rtv {{.Config.model}} {{.Config.ip}} {{.Params.key}}"
         }
     }
 }

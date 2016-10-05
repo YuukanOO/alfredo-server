@@ -9,9 +9,9 @@ import (
 
 // Controller represents a remote controller such as a phone.
 type Controller struct {
-	ID    bson.ObjectId `bson:"_id"`
-	UID   string
-	Token string
+	ID    bson.ObjectId `bson:"_id" json:"id"`
+	UID   string        `json:"-"`
+	Token string        `json:"-"`
 }
 
 func newController(uid string) *Controller {

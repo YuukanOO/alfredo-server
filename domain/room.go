@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
@@ -8,10 +9,10 @@ import (
 
 // Room represents a house room.
 type Room struct {
-	ID        bson.ObjectId `bson:"_id"`
-	Name      string
-	CreatedBy bson.ObjectId
-	CreatedAt time.Time
+	ID        bson.ObjectId `bson:"_id" json:"id"`
+	Name      string        `json:"name"`
+	CreatedBy bson.ObjectId `json:"created_by"`
+	CreatedAt time.Time     `json:"created_at"`
 }
 
 func newRoom(name string, controller bson.ObjectId) *Room {
@@ -21,4 +22,29 @@ func newRoom(name string, controller bson.ObjectId) *Room {
 		CreatedBy: controller,
 		CreatedAt: time.Now(),
 	}
+}
+
+// RegisterDevice registers a device for this room.
+func (room *Room) RegisterDevice(
+	deviceByName DeviceByNameFunc,
+	name string,
+	adapter *Adapter,
+	config map[string]interface{}) (*Device, error) {
+
+	if _, err := deviceByName(name); err == nil {
+		return nil, errors.New("DeviceNameAlreadyExists")
+	}
+
+	// First, validates the config by looking each needed adapter config values
+	// in the given config map
+	for ck := range adapter.Config {
+		// TODO: type checking maybe...
+		if config[ck] == nil {
+			return nil, errors.New("ConfigInvalid")
+		}
+	}
+
+	device := newDevice(room.ID, name, adapter.ID, config)
+
+	return device, nil
 }

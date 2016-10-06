@@ -2,6 +2,9 @@
 listen="192.168.0.15:8080"
 remote=""
 allowedOrigins=["*"]
+shellCommand=["sh", "-c"]
+# On windows, it should be
+# shellCommand=["cmd", "/c"]
 
 [database]
 urls=["mongodb://127.0.0.1:27017/alfredo"]

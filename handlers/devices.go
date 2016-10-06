@@ -57,9 +57,9 @@ func deviceExecuteCommand(c *gin.Context) {
 		command := c.Param("device_command")
 
 		if adapter == nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			c.AbortWithStatus(http.StatusInternalServerError)
 		} else {
-			err = device.Execute(adapter, command, commandParameters)
+			err = adapter.Execute(env.Current().Server.ShellCommand, command, device, commandParameters)
 
 			if err != nil {
 				c.AbortWithError(http.StatusBadRequest, err)

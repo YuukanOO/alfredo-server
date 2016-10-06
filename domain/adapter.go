@@ -1,6 +1,12 @@
 package domain
 
-import "text/template"
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"os/exec"
+	"text/template"
+)
 
 // Adapter represents an available smart adapter.
 type Adapter struct {
@@ -28,6 +34,48 @@ func (adp *Adapter) ParseCommands() error {
 	}
 
 	adp.commandsParsed = commands
+
+	return nil
+}
+
+// Execute an adapter command for the given device and parametrization.
+func (adp *Adapter) Execute(shell []string, command string, device *Device, params map[string]interface{}) error {
+	// Check if the command has been parsed first
+	tmpl := adp.commandsParsed[command]
+
+	// If not found, ensure the commands has been parsed
+	if tmpl == nil && adp.Commands[command] != "" {
+		if err := adp.ParseCommands(); err != nil {
+			return err
+		}
+		tmpl = adp.commandsParsed[command]
+	}
+
+	// If still null, then the command does not exists in this adapter
+	if tmpl == nil {
+		return errors.New("CommandNotFound")
+	}
+
+	// Creates the execution context available in the command template
+	ctx := newExecutionContext(device.Config, params)
+
+	var buf bytes.Buffer
+
+	if err := tmpl.Execute(&buf, ctx); err != nil {
+		return err
+	}
+
+	// Executes the command
+	// TODO: Robust use of shell[] index out of range...
+	cmd := exec.Command(shell[0], append(shell[1:], buf.String())...)
+
+	out, err := cmd.Output()
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(out))
 
 	return nil
 }

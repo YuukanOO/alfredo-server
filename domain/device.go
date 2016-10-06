@@ -1,11 +1,6 @@
 package domain
 
-import (
-	"bytes"
-	"errors"
-
-	"gopkg.in/mgo.v2/bson"
-)
+import "gopkg.in/mgo.v2/bson"
 
 // Device represents a smart device connected to our system
 type Device struct {
@@ -28,30 +23,4 @@ func newDevice(
 		Adapter: adapter,
 		Config:  config,
 	}
-}
-
-// Execute a command for this device with the given parameters.
-func (dev *Device) Execute(adapter *Adapter, command string, params map[string]interface{}) error {
-
-	// TODO: Execute should be in the Adapter class!
-
-	tmpl := adapter.commandsParsed[command]
-
-	if tmpl == nil {
-		return errors.New("CommandNotFound")
-	}
-
-	ctx := newExecutionContext(dev.Config, params)
-
-	var buf bytes.Buffer
-
-	err := tmpl.Execute(&buf, ctx)
-
-	if err != nil {
-		return err
-	}
-
-	// TODO: launch the command with buf.String()
-
-	return nil
 }

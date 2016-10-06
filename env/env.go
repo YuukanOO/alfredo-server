@@ -19,6 +19,7 @@ type ServerConfig struct {
 	Listen         string
 	Remote         string
 	AllowedOrigins []string
+	ShellCommand   []string
 }
 
 // SecurityConfig contains settings related to security.

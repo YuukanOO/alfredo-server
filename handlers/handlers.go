@@ -7,7 +7,7 @@ import (
 
 // Register register handlers for the entire application.
 func Register(eng *gin.Engine) {
-	eng.POST("/controller", registerController)
+	eng.POST("/controllers", registerController)
 
 	// Require privileges
 	auth := eng.Group("", middlewares.Auth())

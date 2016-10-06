@@ -46,6 +46,26 @@ func createDevice(c *gin.Context) {
 	}
 }
 
+func getAllDevices(c *gin.Context) {
+	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+	roomIDStr := c.Query("room_id")
+
+	var devices []domain.Device
+	var err error
+
+	if roomIDStr != "" {
+		devices, err = domain.DevicesByRoomID(db)(bson.ObjectIdHex(roomIDStr))
+	} else {
+		devices, err = domain.DevicesAll(db)()
+	}
+
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+	} else {
+		c.JSON(http.StatusOK, devices)
+	}
+}
+
 func deviceExecuteCommand(c *gin.Context) {
 	var commandParameters map[string]interface{}
 
@@ -59,12 +79,16 @@ func deviceExecuteCommand(c *gin.Context) {
 		if adapter == nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
 		} else {
-			err = adapter.Execute(env.Current().Server.ShellCommand, command, device, commandParameters)
+			res, err := adapter.Execute(env.Current().Server.ShellCommand, command, device, commandParameters)
 
-			if err != nil {
-				c.AbortWithError(http.StatusBadRequest, err)
+			if err == nil {
+				c.JSON(http.StatusOK, res)
 			} else {
-				c.AbortWithStatus(http.StatusOK)
+				if res == nil {
+					c.AbortWithError(http.StatusBadRequest, err)
+				} else {
+					c.JSON(http.StatusBadRequest, res)
+				}
 			}
 		}
 	}

@@ -23,6 +23,7 @@ func Register(eng *gin.Engine) {
 	auth.DELETE("/rooms/:room_id", middlewares.Room(), removeRoom)
 
 	// Devices
+	auth.GET("/devices", getAllDevices)
 	auth.POST("/devices", createDevice)
 	auth.PUT("/devices/:device_id/:device_command", middlewares.Device(), deviceExecuteCommand)
 }

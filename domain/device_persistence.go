@@ -34,6 +34,26 @@ func DeviceByID(db *mgo.Database) DeviceByIDFunc {
 	}
 }
 
+// DevicesByRoomIDFunc callback
+type DevicesByRoomIDFunc func(id bson.ObjectId) ([]Device, error)
+
+// DevicesByRoomID retrieves a list of devices by their room ID
+func DevicesByRoomID(db *mgo.Database) DevicesByRoomIDFunc {
+	return func(id bson.ObjectId) ([]Device, error) {
+		var result []Device
+
+		err := db.C(DeviceCollectionName).Find(bson.M{
+			"roomid": id,
+		}).All(&result)
+
+		if result == nil {
+			result = []Device{}
+		}
+
+		return result, err
+	}
+}
+
 // DeviceByNameFunc callback
 type DeviceByNameFunc func(name string) (*Device, error)
 
@@ -47,5 +67,23 @@ func DeviceByName(db *mgo.Database) DeviceByNameFunc {
 		}).One(&result)
 
 		return &result, err
+	}
+}
+
+// DevicesAllFunc callback
+type DevicesAllFunc func() ([]Device, error)
+
+// DevicesAll retrieves all devices.
+func DevicesAll(db *mgo.Database) DevicesAllFunc {
+	return func() ([]Device, error) {
+		var result []Device
+
+		err := db.C(DeviceCollectionName).Find(bson.M{}).All(&result)
+
+		if result == nil {
+			result = []Device{}
+		}
+
+		return result, err
 	}
 }

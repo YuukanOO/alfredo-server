@@ -2,8 +2,6 @@ package domain
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"os/exec"
 	"text/template"
 )
@@ -39,21 +37,21 @@ func (adp *Adapter) ParseCommands() error {
 }
 
 // Execute an adapter command for the given device and parametrization.
-func (adp *Adapter) Execute(shell []string, command string, device *Device, params map[string]interface{}) error {
+func (adp *Adapter) Execute(shell []string, command string, device *Device, params map[string]interface{}) (*ExecutionResult, error) {
 	// Check if the command has been parsed first
 	tmpl := adp.commandsParsed[command]
 
 	// If not found, ensure the commands has been parsed
 	if tmpl == nil && adp.Commands[command] != "" {
 		if err := adp.ParseCommands(); err != nil {
-			return err
+			return nil, err
 		}
 		tmpl = adp.commandsParsed[command]
 	}
 
 	// If still null, then the command does not exists in this adapter
 	if tmpl == nil {
-		return errors.New("CommandNotFound")
+		return nil, ErrAdapterCommandNotFound
 	}
 
 	// Creates the execution context available in the command template
@@ -62,20 +60,30 @@ func (adp *Adapter) Execute(shell []string, command string, device *Device, para
 	var buf bytes.Buffer
 
 	if err := tmpl.Execute(&buf, ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Executes the command
 	// TODO: Robust use of shell[] index out of range...
 	cmd := exec.Command(shell[0], append(shell[1:], buf.String())...)
 
-	out, err := cmd.Output()
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
 
-	if err != nil {
-		return err
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	result := &ExecutionResult{
+		Success: cmd.ProcessState.Success(),
+		Err:     stderr.String(),
+		Out:     stdout.String(),
 	}
 
-	fmt.Println(string(out))
+	if err != nil {
+		return result, err
+	}
 
-	return nil
+	return result, nil
 }

@@ -12,7 +12,7 @@ func getAlfredoSystemInfos(c *gin.Context) {
 	curEnv := env.Current()
 
 	c.JSON(http.StatusOK, gin.H{
-		"version": env.VERSION,
+		"version": env.Version,
 		"local":   curEnv.Server.Listen,
 		"remote":  curEnv.Server.Remote,
 	})

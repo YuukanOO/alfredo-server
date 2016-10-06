@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"errors"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
@@ -32,7 +31,7 @@ func (room *Room) RegisterDevice(
 	config map[string]interface{}) (*Device, error) {
 
 	if _, err := deviceByName(name); err == nil {
-		return nil, errors.New("DeviceNameAlreadyExists")
+		return nil, ErrDeviceNameAlreadyExists
 	}
 
 	// First, validates the config by looking each needed adapter config values
@@ -40,7 +39,7 @@ func (room *Room) RegisterDevice(
 	for ck := range adapter.Config {
 		// TODO: type checking maybe...
 		if config[ck] == nil {
-			return nil, errors.New("ConfigInvalid")
+			return nil, ErrDeviceConfigInvalid
 		}
 	}
 

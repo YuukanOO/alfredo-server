@@ -10,8 +10,8 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-// VERSION is the current alfredo version.
-const VERSION = "0.1.0"
+// Version is the current alfredo version.
+const Version = "0.1.0"
 
 // ServerConfig  represents the current environment settings
 // relative to the HTTP server.

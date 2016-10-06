@@ -14,3 +14,10 @@ func newExecutionContext(
 		Params: params,
 	}
 }
+
+// ExecutionResult holds information about the running of an adapter command.
+type ExecutionResult struct {
+	Success bool   `json:"success"`
+	Out     string `json:"out"`
+	Err     string `json:"err"`
+}

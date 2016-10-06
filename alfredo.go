@@ -1,35 +1,92 @@
 package main
 
 import (
+	"os"
+
 	"github.com/YuukanOO/alfredo/env"
 	"github.com/YuukanOO/alfredo/handlers"
 	"github.com/YuukanOO/alfredo/middlewares"
 	"github.com/gin-gonic/gin"
+	"github.com/urfave/cli"
 )
 
 func main() {
-	err := env.LoadFromFile("./alfredo.toml")
+	// err := env.LoadFromFile("./alfredo.toml")
 
-	if err != nil {
-		panic(err)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// defer env.Cleanup()
+
+	// err = env.LoadAdapters("./adapters.json")
+
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// r := gin.Default()
+
+	// r.Use(middlewares.CORS(&middlewares.CORSOptions{
+	// 	AllowedOrigins: env.Current().Server.AllowedOrigins,
+	// 	AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+	// }), middlewares.DB())
+
+	// handlers.Register(r)
+
+	// panic(r.Run(env.Current().Server.Listen))
+
+	var configPath string
+	var adaptersPath string
+
+	app := cli.NewApp()
+	app.Name = "alfredo"
+	app.Usage = "Flexible and light home automation server"
+	app.Version = env.Version
+
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:        "config, c",
+			Usage:       "Load configuration from toml `FILE`",
+			Value:       "./alfredo.toml",
+			Destination: &configPath,
+		},
+		cli.StringFlag{
+			Name:        "adapters, a",
+			Usage:       "Load adapters from json `FILE`",
+			Value:       "./adapters.json",
+			Destination: &adaptersPath,
+		},
 	}
 
-	defer env.Cleanup()
+	app.Commands = []cli.Command{
+		cli.Command{
+			Name:  "run",
+			Usage: "Starts the alfredo server",
+			Action: func(c *cli.Context) error {
+				if err := env.LoadFromFile(configPath); err != nil {
+					return err
+				}
 
-	err = env.LoadAdapters("./adapters.json")
+				defer env.Cleanup()
 
-	if err != nil {
-		panic(err)
+				if err := env.LoadAdapters(adaptersPath); err != nil {
+					return err
+				}
+
+				r := gin.Default()
+
+				r.Use(middlewares.CORS(&middlewares.CORSOptions{
+					AllowedOrigins: env.Current().Server.AllowedOrigins,
+					AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+				}), middlewares.DB())
+
+				handlers.Register(r)
+
+				return r.Run(env.Current().Server.Listen)
+			},
+		},
 	}
 
-	r := gin.Default()
-
-	r.Use(middlewares.CORS(&middlewares.CORSOptions{
-		AllowedOrigins: env.Current().Server.AllowedOrigins,
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
-	}), middlewares.DB())
-
-	handlers.Register(r)
-
-	panic(r.Run(env.Current().Server.Listen))
+	app.Run(os.Args)
 }

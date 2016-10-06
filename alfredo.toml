@@ -1,13 +1,19 @@
 [server]
+# Where to bind
 listen="192.168.0.15:8080"
+# Remote access address
 remote=""
+# Allowed origins for CORS
 allowedOrigins=["*"]
+# Shell command to use when executing adapter's commands
 shellCommand=["sh", "-c"]
 # On windows, it should be
 # shellCommand=["cmd", "/c"]
 
 [database]
+# Urls of mongodb server
 urls=["mongodb://127.0.0.1:27017/alfredo"]
 
 [security]
-secret="98d008ae1d1f4aff83c469d5fd196eed36e1b08ca5474c107cdeb156a5eb98bc"
+# Secret key to use for signing auth token
+secret="YourSecretKeyGoesHere"

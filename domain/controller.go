@@ -1,8 +1,6 @@
 package domain
 
 import (
-	"errors"
-
 	"github.com/dgrijalva/jwt-go"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -24,7 +22,7 @@ func newController(uid string) *Controller {
 // CreateRoom tries to create a new room for with this controller.
 func (c *Controller) CreateRoom(roomByName RoomByNameFunc, name string) (*Room, error) {
 	if _, err := roomByName(name); err == nil {
-		return nil, errors.New("RoomNameAlreadyExists")
+		return nil, ErrRoomNameAlreadyExists
 	}
 
 	room := newRoom(name, c.ID)

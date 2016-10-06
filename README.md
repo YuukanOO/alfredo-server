@@ -1,19 +1,13 @@
 # Alfredo: Your private smart home assistant
 
-## Glossary
+## Usage
 
-### Controller
+First, starts by configuring the config file provided in this repository. Adjust it to suit your environment by following guidelines in the comments.
 
-Represents a physical remote controller which is authorized to send command to the server.
+When it's done, run it with:
 
-### Devices
+```
+alfredo -c TOML_CONFIG_FILE run
+```
 
-Represents a remotely controlled device.
-
-### Rooms
-
-Represents a house room.
-
-### Adapters
-
-This is the list of available adapters to smart devices. This list is given by a JSON file.
+*TODO: documentation*

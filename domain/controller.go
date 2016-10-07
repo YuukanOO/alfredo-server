@@ -8,8 +8,8 @@ import (
 // Controller represents a remote controller such as a phone.
 type Controller struct {
 	ID    bson.ObjectId `bson:"_id" json:"id"`
-	UID   string        `json:"-"`
-	Token string        `json:"-"`
+	UID   string        `bson:"uid" json:"-"`
+	Token string        `bson:"token" json:"-"`
 }
 
 func newController(uid string) *Controller {

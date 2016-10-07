@@ -9,9 +9,9 @@ import (
 // Room represents a house room.
 type Room struct {
 	ID        bson.ObjectId `bson:"_id" json:"id"`
-	Name      string        `json:"name"`
-	CreatedBy bson.ObjectId `json:"created_by"`
-	CreatedAt time.Time     `json:"created_at"`
+	Name      string        `bson:"name" json:"name"`
+	CreatedBy bson.ObjectId `bson:"created_by" json:"created_by"`
+	CreatedAt time.Time     `bson:"created_at" json:"created_at"`
 }
 
 func newRoom(name string, controller bson.ObjectId) *Room {

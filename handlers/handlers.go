@@ -26,4 +26,5 @@ func Register(eng *gin.Engine) {
 	auth.GET("/devices", getAllDevices)
 	auth.POST("/devices", createDevice)
 	auth.PUT("/devices/:device_id/:device_command", middlewares.Device(), deviceExecuteCommand)
+	auth.DELETE("/devices/:device_id", middlewares.Device(), removeDevice)
 }

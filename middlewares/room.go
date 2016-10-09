@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/YuukanOO/alfredo/domain"
+	"github.com/YuukanOO/alfredo/env"
 	"github.com/gin-gonic/gin"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -21,12 +22,15 @@ func Room() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusBadRequest)
 		} else {
 			db := c.MustGet(DBKey).(*mgo.Database)
-			room, err := domain.RoomByID(db)(id)
+
+			var room domain.Room
+
+			err := domain.Find(db.C(env.RoomsCollection))(domain.ByID(id)).One(&room)
 
 			if err != nil {
 				c.AbortWithStatus(http.StatusNotFound)
 			} else {
-				c.Set(RoomKey, room)
+				c.Set(RoomKey, &room)
 				c.Next()
 			}
 		}

@@ -25,18 +25,23 @@ func createDevice(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 	} else {
 		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
-		room, err := domain.RoomByID(db)(params.RoomID)
+		var room domain.Room
+
+		err := domain.Find(db.C(env.RoomsCollection))(
+			domain.ByID(params.RoomID)).One(&room)
+
 		adapter := env.Current().Adapters[params.Adapter]
 
 		if err != nil || adapter == nil {
 			c.AbortWithError(http.StatusNotFound, err)
 		} else {
-			device, err := room.RegisterDevice(domain.DeviceByName(db), params.Name, adapter, params.Config)
+			devicesCollection := db.C(env.DevicesCollection)
+			device, err := room.RegisterDevice(domain.Find(devicesCollection), params.Name, adapter, params.Config)
 
 			if err != nil {
 				c.AbortWithError(http.StatusBadRequest, err)
 			} else {
-				if err = domain.DeviceUpsert(db)(device); err != nil {
+				if err = domain.Insert(devicesCollection)(device); err != nil {
 					c.AbortWithError(http.StatusInternalServerError, err)
 				} else {
 					c.JSON(http.StatusOK, device)
@@ -50,19 +55,35 @@ func getAllDevices(c *gin.Context) {
 	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 	roomIDStr := c.Query("room_id")
 
-	var devices []domain.Device
-	var err error
+	selectors := []bson.M{}
 
 	if roomIDStr != "" {
-		devices, err = domain.DevicesByRoomID(db)(bson.ObjectIdHex(roomIDStr))
-	} else {
-		devices, err = domain.DevicesAll(db)()
+		selectors = append(selectors, domain.ByRoomID(bson.ObjectIdHex(roomIDStr)))
 	}
+
+	var devices []domain.Device
+
+	err := domain.Find(db.C(env.DevicesCollection))(selectors...).All(&devices)
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	} else {
+		if devices == nil {
+			devices = []domain.Device{}
+		}
+
 		c.JSON(http.StatusOK, devices)
+	}
+}
+
+func removeDevice(c *gin.Context) {
+	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+	device := c.MustGet(middlewares.DeviceKey).(*domain.Device)
+
+	if err := domain.Remove(db.C(env.DevicesCollection))(domain.ByID(device.ID)); err != nil {
+		c.AbortWithError(http.StatusNotFound, err)
+	} else {
+		c.AbortWithStatus(http.StatusOK)
 	}
 }
 

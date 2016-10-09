@@ -25,12 +25,14 @@ func newRoom(name string, controller bson.ObjectId) *Room {
 
 // RegisterDevice registers a device for this room.
 func (room *Room) RegisterDevice(
-	deviceByName DeviceByNameFunc,
+	findDevices FindFunc,
 	name string,
 	adapter *Adapter,
 	config map[string]interface{}) (*Device, error) {
 
-	if _, err := deviceByName(name); err == nil {
+	var existingRoom Room
+
+	if err := findDevices(ByName(name)).One(&existingRoom); err == nil {
 		return nil, ErrDeviceNameAlreadyExists
 	}
 

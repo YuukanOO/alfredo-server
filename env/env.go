@@ -10,8 +10,16 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-// Version is the current alfredo version.
-const Version = "0.1.0"
+const (
+	// Version is the current alfredo version.
+	Version = "0.1.0"
+	// ControllersCollection is the name of the mongo collection
+	ControllersCollection = "controllers"
+	// RoomsCollection is the name of the mongo collection
+	RoomsCollection = "rooms"
+	// DevicesCollection is the name of the mongo collection
+	DevicesCollection = "devices"
+)
 
 // ServerConfig  represents the current environment settings
 // relative to the HTTP server.

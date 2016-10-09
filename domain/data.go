@@ -33,6 +33,12 @@ type UpdateFunc func(selectors []bson.M, setters []bson.M) error
 // UpdateWithDocFunc delegate used when performing an update with a doc.
 type UpdateWithDocFunc func(selectors []bson.M, doc interface{}) error
 
+// UpsertFunc delegate used when upserting.
+type UpsertFunc func(selectors []bson.M, setters []bson.M) (*mgo.ChangeInfo, error)
+
+// UpsertWithDocFunc delegate used when upserting with a doc.
+type UpsertWithDocFunc func(selectors []bson.M, doc interface{}) (*mgo.ChangeInfo, error)
+
 // InsertFunc is the delegate type used to insert documents in the database.
 type InsertFunc func(docs ...interface{}) error
 
@@ -74,6 +80,20 @@ func UpdateAllWithDoc(collection *mgo.Collection) UpdateAllWithDocFunc {
 func Update(collection *mgo.Collection) UpdateFunc {
 	return func(selectors []bson.M, setters []bson.M) error {
 		return collection.Update(applySelectors(selectors...), applySelectors(setters...))
+	}
+}
+
+// Upsert matched documents.
+func Upsert(collection *mgo.Collection) UpsertFunc {
+	return func(selectors []bson.M, setters []bson.M) (*mgo.ChangeInfo, error) {
+		return collection.Upsert(applySelectors(selectors...), applySelectors(setters...))
+	}
+}
+
+// UpsertWithDoc upserts matched documents with the given doc.
+func UpsertWithDoc(collection *mgo.Collection) UpsertWithDocFunc {
+	return func(selectors []bson.M, doc interface{}) (*mgo.ChangeInfo, error) {
+		return collection.Upsert(applySelectors(selectors...), doc)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/YuukanOO/alfredo/domain"
 	"github.com/YuukanOO/alfredo/env"
@@ -22,13 +23,14 @@ func registerController(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 	} else {
 		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+		controllersCollection := db.C(env.ControllersCollection)
 
-		controller, err := domain.RegisterController(domain.ControllerByUID(db), []byte(env.Current().Security.Secret), params.UID)
+		controller, err := domain.RegisterController(domain.Find(controllersCollection), []byte(env.Current().Security.Secret), params.UID)
 
 		if err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
 		} else {
-			if err = domain.ControllerUpsert(db)(controller); err != nil {
+			if _, err = domain.UpsertWithDoc(controllersCollection)([]bson.M{domain.ByID(controller.ID)}, controller); err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
 			} else {
 				c.JSON(http.StatusOK, controller.Token)

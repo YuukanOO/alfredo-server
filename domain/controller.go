@@ -20,8 +20,10 @@ func newController(uid string) *Controller {
 }
 
 // CreateRoom tries to create a new room for with this controller.
-func (c *Controller) CreateRoom(roomByName RoomByNameFunc, name string) (*Room, error) {
-	if _, err := roomByName(name); err == nil {
+func (c *Controller) CreateRoom(findRooms FindFunc, name string) (*Room, error) {
+	var existingRoom Room
+
+	if err := findRooms(ByName(name)).One(&existingRoom); err == nil {
 		return nil, ErrRoomNameAlreadyExists
 	}
 
@@ -32,11 +34,13 @@ func (c *Controller) CreateRoom(roomByName RoomByNameFunc, name string) (*Room, 
 
 // RegisterController registers a controller by its uid. It will returns a valid controller
 // with a generated token ready to be used.
-func RegisterController(controllerByUID ControllerByUIDFunc, secret []byte, uid string) (*Controller, error) {
+func RegisterController(findControllers FindFunc, secret []byte, uid string) (*Controller, error) {
+
+	var existingController Controller
 
 	// If it already exists, returns the token
-	if existingController, err := controllerByUID(uid); err == nil {
-		return existingController, nil
+	if err := findControllers(ByUID(uid)).One(&existingController); err == nil {
+		return &existingController, nil
 	}
 
 	controller := newController(uid)

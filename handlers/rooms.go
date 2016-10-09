@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/YuukanOO/alfredo/domain"
 	"github.com/YuukanOO/alfredo/env"
@@ -31,6 +32,30 @@ func createRoom(c *gin.Context) {
 			c.AbortWithError(http.StatusBadRequest, err)
 		} else {
 			if err = domain.Insert(roomsCollection)(room); err != nil {
+				c.AbortWithError(http.StatusInternalServerError, err)
+			} else {
+				c.JSON(http.StatusOK, room)
+			}
+		}
+	}
+}
+
+func updateRoom(c *gin.Context) {
+	var params createRoomParams
+
+	if err := c.BindJSON(&params); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+	} else {
+		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+		room := c.MustGet(middlewares.RoomKey).(*domain.Room)
+		roomsCollection := db.C(env.RoomsCollection)
+
+		err := room.Rename(domain.Find(roomsCollection), params.Name)
+
+		if err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+		} else {
+			if err := domain.UpdateWithDoc(roomsCollection)([]bson.M{domain.ByID(room.ID)}, room); err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
 			} else {
 				c.JSON(http.StatusOK, room)

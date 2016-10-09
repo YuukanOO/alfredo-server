@@ -49,3 +49,14 @@ func (room *Room) RegisterDevice(
 
 	return device, nil
 }
+
+// Rename a room and check for duplicates.
+func (room *Room) Rename(findRooms FindFunc, newName string) error {
+	if err := findRooms(ByName(newName)); err == nil {
+		return ErrRoomNameAlreadyExists
+	}
+
+	room.Name = newName
+
+	return nil
+}

@@ -27,8 +27,7 @@ func createDevice(c *gin.Context) {
 		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 		var room domain.Room
 
-		err := domain.Find(db.C(env.RoomsCollection))(
-			domain.ByID(params.RoomID)).One(&room)
+		err := db.C(env.RoomsCollection).FindId(params.RoomID).One(&room)
 
 		adapter := env.Current().Adapters[params.Adapter]
 
@@ -36,12 +35,12 @@ func createDevice(c *gin.Context) {
 			c.AbortWithError(http.StatusNotFound, err)
 		} else {
 			devicesCollection := db.C(env.DevicesCollection)
-			device, err := room.RegisterDevice(domain.Find(devicesCollection), params.Name, adapter, params.Config)
+			device, err := room.RegisterDevice(devicesCollection.Find, params.Name, adapter, params.Config)
 
 			if err != nil {
 				c.AbortWithError(http.StatusBadRequest, err)
 			} else {
-				if err = domain.Insert(devicesCollection)(device); err != nil {
+				if err = devicesCollection.Insert(device); err != nil {
 					c.AbortWithError(http.StatusInternalServerError, err)
 				} else {
 					c.JSON(http.StatusOK, device)
@@ -63,7 +62,7 @@ func getAllDevices(c *gin.Context) {
 
 	var devices []domain.Device
 
-	err := domain.Find(db.C(env.DevicesCollection))(selectors...).All(&devices)
+	err := db.C(env.DevicesCollection).Find(domain.And(selectors...)).All(&devices)
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -80,7 +79,7 @@ func removeDevice(c *gin.Context) {
 	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 	device := c.MustGet(middlewares.DeviceKey).(*domain.Device)
 
-	if err := domain.Remove(db.C(env.DevicesCollection))(domain.ByID(device.ID)); err != nil {
+	if err := db.C(env.DevicesCollection).RemoveId(device.ID); err != nil {
 		c.AbortWithError(http.StatusNotFound, err)
 	} else {
 		c.AbortWithStatus(http.StatusOK)

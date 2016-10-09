@@ -25,7 +25,7 @@ func newRoom(name string, controller bson.ObjectId) *Room {
 
 // RegisterDevice registers a device for this room.
 func (room *Room) RegisterDevice(
-	findDevices FindFunc,
+	findDevices QueryFunc,
 	name string,
 	adapter *Adapter,
 	config map[string]interface{}) (*Device, error) {
@@ -51,7 +51,7 @@ func (room *Room) RegisterDevice(
 }
 
 // Rename a room and check for duplicates.
-func (room *Room) Rename(findRooms FindFunc, newName string) error {
+func (room *Room) Rename(findRooms QueryFunc, newName string) error {
 	if err := findRooms(ByName(newName)); err == nil {
 		return ErrRoomNameAlreadyExists
 	}

@@ -25,7 +25,7 @@ func Room() gin.HandlerFunc {
 
 			var room domain.Room
 
-			err := domain.Find(db.C(env.RoomsCollection))(domain.ByID(id)).One(&room)
+			err := db.C(env.RoomsCollection).FindId(id).One(&room)
 
 			if err != nil {
 				c.AbortWithStatus(http.StatusNotFound)

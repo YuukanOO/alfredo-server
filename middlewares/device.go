@@ -25,7 +25,7 @@ func Device() gin.HandlerFunc {
 
 			var device domain.Device
 
-			err := domain.Find(db.C(env.DevicesCollection))(domain.ByID(id)).One(&device)
+			err := db.C(env.DevicesCollection).FindId(id).One(&device)
 
 			if err != nil {
 				c.AbortWithStatus(http.StatusNotFound)

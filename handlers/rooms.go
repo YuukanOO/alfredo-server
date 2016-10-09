@@ -26,12 +26,12 @@ func createRoom(c *gin.Context) {
 		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 		roomsCollection := db.C(env.RoomsCollection)
 
-		room, err := controller.CreateRoom(domain.Find(roomsCollection), params.Name)
+		room, err := controller.CreateRoom(roomsCollection.Find, params.Name)
 
 		if err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
 		} else {
-			if err = domain.Insert(roomsCollection)(room); err != nil {
+			if err = roomsCollection.Insert(room); err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
 			} else {
 				c.JSON(http.StatusOK, room)
@@ -50,12 +50,12 @@ func updateRoom(c *gin.Context) {
 		room := c.MustGet(middlewares.RoomKey).(*domain.Room)
 		roomsCollection := db.C(env.RoomsCollection)
 
-		err := room.Rename(domain.Find(roomsCollection), params.Name)
+		err := room.Rename(roomsCollection.Find, params.Name)
 
 		if err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
 		} else {
-			if err := domain.UpdateWithDoc(roomsCollection)([]bson.M{domain.ByID(room.ID)}, room); err != nil {
+			if err := roomsCollection.UpdateId(room.ID, room); err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
 			} else {
 				c.JSON(http.StatusOK, room)
@@ -69,7 +69,7 @@ func getAllRooms(c *gin.Context) {
 
 	var rooms []domain.Room
 
-	err := domain.Find(db.C(env.RoomsCollection))().All(&rooms)
+	err := db.C(env.RoomsCollection).Find(bson.M{}).All(&rooms)
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -86,7 +86,7 @@ func removeRoom(c *gin.Context) {
 	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 	room := c.MustGet(middlewares.RoomKey).(*domain.Room)
 
-	if err := domain.Remove(db.C(env.RoomsCollection))(domain.ByID(room.ID)); err != nil {
+	if err := db.C(env.RoomsCollection).RemoveId(room.ID); err != nil {
 		c.AbortWithError(http.StatusNotFound, err)
 	} else {
 		c.AbortWithStatus(http.StatusOK)

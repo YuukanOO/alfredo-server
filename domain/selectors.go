@@ -1,6 +1,25 @@
 package domain
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+)
+
+// QueryFunc used to retrieve data when inside the domain.
+type QueryFunc func(query interface{}) *mgo.Query
+
+// And join given selectors with a logic and.
+func And(selectors ...bson.M) bson.M {
+	result := bson.M{}
+
+	for _, s := range selectors {
+		for k, v := range s {
+			result[k] = v
+		}
+	}
+
+	return result
+}
 
 // ByName finds an element by its name
 func ByName(name string) bson.M {
@@ -13,13 +32,6 @@ func ByName(name string) bson.M {
 func ByUID(uid string) bson.M {
 	return bson.M{
 		"uid": uid,
-	}
-}
-
-// ByID finds an element by its ID
-func ByID(id bson.ObjectId) bson.M {
-	return bson.M{
-		"_id": id,
 	}
 }
 

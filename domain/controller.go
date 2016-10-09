@@ -20,7 +20,7 @@ func newController(uid string) *Controller {
 }
 
 // CreateRoom tries to create a new room for with this controller.
-func (c *Controller) CreateRoom(findRooms FindFunc, name string) (*Room, error) {
+func (c *Controller) CreateRoom(findRooms QueryFunc, name string) (*Room, error) {
 	var existingRoom Room
 
 	if err := findRooms(ByName(name)).One(&existingRoom); err == nil {
@@ -34,7 +34,10 @@ func (c *Controller) CreateRoom(findRooms FindFunc, name string) (*Room, error) 
 
 // RegisterController registers a controller by its uid. It will returns a valid controller
 // with a generated token ready to be used.
-func RegisterController(findControllers FindFunc, secret []byte, uid string) (*Controller, error) {
+func RegisterController(
+	findControllers QueryFunc,
+	secret []byte,
+	uid string) (*Controller, error) {
 
 	var existingController Controller
 

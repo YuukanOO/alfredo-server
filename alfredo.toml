@@ -9,6 +9,8 @@ allowedOrigins=["*"]
 shellCommand=["sh", "-c"]
 # On windows, it should be
 # shellCommand=["cmd", "/c"]
+# Cache folder where stuff like widgets generated will be store
+cachePath="cache"
 
 [database]
 # Urls of mongodb server

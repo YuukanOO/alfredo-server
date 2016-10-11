@@ -2,7 +2,11 @@ package domain
 
 import (
 	"bytes"
+	"fmt"
+	"io/ioutil"
+	"os"
 	"os/exec"
+	"path"
 	"text/template"
 )
 
@@ -13,6 +17,7 @@ type Adapter struct {
 	Category string                 `json:"category"`
 	Config   map[string]interface{} `json:"config"`
 	Commands map[string]string      `json:"commands"`
+	Widgets  map[string]string      `json:"widgets"`
 
 	commandsParsed map[string]*template.Template
 }
@@ -32,6 +37,50 @@ func (adp *Adapter) ParseCommands() error {
 	}
 
 	adp.commandsParsed = commands
+
+	return nil
+}
+
+// PrepareWidgets will transform jsx to valid js and cache them to be provided to clients.
+func (adp *Adapter) PrepareWidgets(cachePath string) error {
+
+	for k, v := range adp.Widgets {
+		widgetStr := ""
+		path := path.Join(cachePath, fmt.Sprintf("%s.%s.js", adp.ID, k))
+
+		// Check if we have to read file contents
+		if v[:1] == "<" {
+			widgetStr = v
+		} else {
+			data, err := ioutil.ReadFile(v)
+
+			if err != nil {
+				return err
+			}
+
+			widgetStr = string(data)
+		}
+
+		// TODO: more robust error handling
+
+		nodeCmd := exec.Command("node", "alfredo_prepare_widgets.js", widgetStr)
+
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
+
+		nodeCmd.Stdout = &stdout
+		nodeCmd.Stderr = &stderr
+
+		err := nodeCmd.Run()
+
+		if err != nil {
+			return NewErrCommandFailed(nodeCmd, err, stderr.String())
+		}
+
+		if err := ioutil.WriteFile(path, stdout.Bytes(), os.ModeExclusive); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

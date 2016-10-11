@@ -3,6 +3,7 @@ package env
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -26,6 +27,7 @@ const (
 type ServerConfig struct {
 	Listen         string
 	Remote         string
+	CachePath      string
 	AllowedOrigins []string
 	ShellCommand   []string
 }
@@ -84,9 +86,18 @@ func LoadAdapters(path string) error {
 		return err
 	}
 
+	// Make sure the cache folder exists
+	if err = os.MkdirAll(current.Server.CachePath, os.ModeExclusive); err != nil {
+		return err
+	}
+
 	for k, v := range current.Adapters {
 		v.ID = k
 		if err = v.ParseCommands(); err != nil {
+			return err
+		}
+
+		if err = v.PrepareWidgets(current.Server.CachePath); err != nil {
 			return err
 		}
 	}

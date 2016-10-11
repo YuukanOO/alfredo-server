@@ -9,6 +9,9 @@
         "commands": {
             "sendkey": "rtv {{.Config.model}} {{.Config.ip}} {{.Params.key}}",
             "echo": "{{ range $key, $value := .Params }}echo {{$key}} {{$value}} && {{ end }} echo Done"
+        },
+        "widgets": {
+            "tile": "<Tile name={device.name} icon=\"tv\" onPress={() => command('sendkey', { key: KEY_MUTE })} />"
         }
     }
 }

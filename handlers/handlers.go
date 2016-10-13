@@ -11,6 +11,8 @@ func Register(eng *gin.Engine) {
 
 	// Require privileges
 	auth := eng.Group("", middlewares.Auth())
+	requireRoom := auth.Group("", middlewares.Room())
+	requireDevice := auth.Group("", middlewares.Device())
 
 	auth.GET("/", getAlfredoSystemInfos)
 
@@ -20,12 +22,12 @@ func Register(eng *gin.Engine) {
 	// Rooms
 	auth.GET("/rooms", getAllRooms)
 	auth.POST("/rooms", createRoom)
-	auth.PUT("/rooms/:room_id", middlewares.Room(), updateRoom)
-	auth.DELETE("/rooms/:room_id", middlewares.Room(), removeRoom)
+	requireRoom.PUT("/rooms/:room_id", updateRoom)
+	requireRoom.DELETE("/rooms/:room_id", removeRoom)
 
 	// Devices
 	auth.GET("/devices", getAllDevices)
 	auth.POST("/devices", createDevice)
-	auth.PUT("/devices/:device_id/:device_command", middlewares.Device(), deviceExecuteCommand)
-	auth.DELETE("/devices/:device_id", middlewares.Device(), removeDevice)
+	requireDevice.PUT("/devices/:device_id/:device_command", deviceExecuteCommand)
+	requireDevice.DELETE("/devices/:device_id", removeDevice)
 }

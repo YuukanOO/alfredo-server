@@ -1,17 +1,16 @@
-{
-    "tv-samsung": {
-        "name": "Samsung TV",
-        "category": "tv",
-        "config": {
-            "ip": "string",
-            "model": "string"
-        },
-        "commands": {
-            "sendkey": "rtv {{.Config.model}} {{.Config.ip}} {{.Params.key}}",
-            "echo": "{{ range $key, $value := .Params }}echo {{$key}} {{$value}} && {{ end }} echo Done"
-        },
-        "widgets": {
-            "tile": "<Tile name={device.name} icon=\"tv\" onPress={() => command('sendkey', { key: KEY_MUTE })} />"
-        }
+[{
+    "id": "tv-samsung",
+    "name": "Samsung TV",
+    "category": "tv",
+    "config": {
+        "ip": "string",
+        "model": "string"
+    },
+    "commands": {
+        "sendkey": "rtv {{.Config.model}} {{.Config.ip}} {{.Params.key}}",
+        "echo": "{{ range $key, $value := .Params }}echo {{$key}} {{$value}} && {{ end }} echo Done"
+    },
+    "widgets": {
+        "tile": "<Tile name={device.name} icon=\"tv\" onPress={() => command('sendkey', { key: KEY_MUTE })} />"
     }
-}
+}]

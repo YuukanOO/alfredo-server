@@ -29,7 +29,7 @@ func createDevice(c *gin.Context) {
 
 		err := db.C(env.RoomsCollection).FindId(params.RoomID).One(&room)
 
-		adapter := env.Current().Adapters[params.Adapter]
+		adapter := env.Current().GetAdapter(params.Adapter)
 
 		if err != nil || adapter == nil {
 			c.AbortWithError(http.StatusNotFound, err)
@@ -93,7 +93,7 @@ func deviceExecuteCommand(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 	} else {
 		device := c.MustGet(middlewares.DeviceKey).(*domain.Device)
-		adapter := env.Current().Adapters[device.Adapter]
+		adapter := env.Current().GetAdapter(device.Adapter)
 		command := c.Param("device_command")
 
 		if adapter == nil {

@@ -49,7 +49,10 @@ type Env struct {
 	Server   *ServerConfig
 	Database *DatabaseConfig
 	Security *SecurityConfig
-	Adapters map[string]*domain.Adapter
+	Adapters []*domain.Adapter
+	Widgets  []*domain.Widget
+
+	adaptersMap map[string]*domain.Adapter
 }
 
 var current Env
@@ -57,6 +60,11 @@ var current Env
 // Current retrieve the current environment.
 func Current() Env {
 	return current
+}
+
+// GetAdapter retrieves an adapter given its ID.
+func (env Env) GetAdapter(id string) *domain.Adapter {
+	return env.adaptersMap[id]
 }
 
 // LoadFromFile load a configuration from a toml file.
@@ -70,6 +78,9 @@ func LoadFromFile(path string) error {
 	session, err := mgo.Dial(strings.Join(current.Database.Urls, ","))
 
 	current.Database.session = session
+
+	// Init some variables here
+	current.adaptersMap = map[string]*domain.Adapter{}
 
 	return err
 }
@@ -91,15 +102,20 @@ func LoadAdapters(path string) error {
 		return err
 	}
 
-	for k, v := range current.Adapters {
-		v.ID = k
+	for _, v := range current.Adapters {
 		if err = v.ParseCommands(); err != nil {
 			return err
 		}
 
-		if err = v.PrepareWidgets(current.Server.CachePath); err != nil {
+		adapterWidgets, err := v.PrepareWidgets()
+
+		if err != nil {
 			return err
 		}
+
+		current.Widgets = append(current.Widgets, adapterWidgets...)
+
+		current.adaptersMap[v.ID] = v
 	}
 
 	return nil

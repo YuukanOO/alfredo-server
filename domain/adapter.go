@@ -2,11 +2,8 @@ package domain
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
-	"path"
 	"text/template"
 )
 
@@ -41,12 +38,13 @@ func (adp *Adapter) ParseCommands() error {
 	return nil
 }
 
-// PrepareWidgets will transform jsx to valid js and cache them to be provided to clients.
-func (adp *Adapter) PrepareWidgets(cachePath string) error {
+// PrepareWidgets will transform jsx to valid js. It will returns a map a widget type and React prepared JS.
+func (adp *Adapter) PrepareWidgets() ([]*Widget, error) {
+	var widgets []*Widget
 
+	// Loop through each widgets in the json file and process them
 	for k, v := range adp.Widgets {
 		widgetStr := ""
-		path := path.Join(cachePath, fmt.Sprintf("%s.%s.js", adp.ID, k))
 
 		// Check if we have to read file contents
 		if v[:1] == "<" {
@@ -55,7 +53,7 @@ func (adp *Adapter) PrepareWidgets(cachePath string) error {
 			data, err := ioutil.ReadFile(v)
 
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			widgetStr = string(data)
@@ -74,15 +72,13 @@ func (adp *Adapter) PrepareWidgets(cachePath string) error {
 		err := nodeCmd.Run()
 
 		if err != nil {
-			return NewErrCommandFailed(nodeCmd, err, stderr.String())
+			return nil, NewErrCommandFailed(nodeCmd, err, stderr.String())
 		}
 
-		if err := ioutil.WriteFile(path, stdout.Bytes(), os.ModeExclusive); err != nil {
-			return err
-		}
+		widgets = append(widgets, newWidget(adp.ID, k, stdout.String()))
 	}
 
-	return nil
+	return widgets, nil
 }
 
 // Execute an adapter command for the given device and parametrization.

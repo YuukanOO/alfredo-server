@@ -2,6 +2,7 @@ package env
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -50,7 +51,6 @@ type Env struct {
 	Database *DatabaseConfig
 	Security *SecurityConfig
 	Adapters []*domain.Adapter
-	Widgets  []*domain.Widget
 
 	adaptersMap map[string]*domain.Adapter
 }
@@ -85,6 +85,12 @@ func LoadFromFile(path string) error {
 	return err
 }
 
+// transformWidget will append necessary arrow function to easily integrates the widget in
+// a client environment.
+func transformWidget(widget string) string {
+	return fmt.Sprintf("({ device, command }) => %s", widget)
+}
+
 // LoadAdapters tries to load the smart adapters from a JSON file.
 func LoadAdapters(path string) error {
 	data, err := ioutil.ReadFile(path)
@@ -107,14 +113,11 @@ func LoadAdapters(path string) error {
 			return err
 		}
 
-		adapterWidgets, err := v.PrepareWidgets()
-
-		if err != nil {
+		if err := v.ParseWidgets(transformWidget); err != nil {
 			return err
 		}
 
-		current.Widgets = append(current.Widgets, adapterWidgets...)
-
+		// Add the adapter to the inner map (for easy and fast retrieval)
 		current.adaptersMap[v.ID] = v
 	}
 

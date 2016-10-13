@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os/exec"
+	"strings"
 	"text/template"
 )
 
@@ -38,10 +39,9 @@ func (adp *Adapter) ParseCommands() error {
 	return nil
 }
 
-// PrepareWidgets will transform jsx to valid js. It will returns a map a widget type and React prepared JS.
-func (adp *Adapter) PrepareWidgets() ([]*Widget, error) {
-	var widgets []*Widget
-
+// ParseWidgets will transform jsx to valid js and replace the inner maps of widgets of this adapter.
+// It will use the given transform func to add additional data to the parsed widget string.
+func (adp *Adapter) ParseWidgets(transformWidgets func(string) string) error {
 	// Loop through each widgets in the json file and process them
 	for k, v := range adp.Widgets {
 		widgetStr := ""
@@ -53,7 +53,7 @@ func (adp *Adapter) PrepareWidgets() ([]*Widget, error) {
 			data, err := ioutil.ReadFile(v)
 
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			widgetStr = string(data)
@@ -72,13 +72,13 @@ func (adp *Adapter) PrepareWidgets() ([]*Widget, error) {
 		err := nodeCmd.Run()
 
 		if err != nil {
-			return nil, NewErrCommandFailed(nodeCmd, err, stderr.String())
+			return NewErrCommandFailed(nodeCmd, err, stderr.String())
 		}
 
-		widgets = append(widgets, newWidget(adp.ID, k, stdout.String()))
+		adp.Widgets[k] = transformWidgets(strings.TrimSpace(stdout.String()))
 	}
 
-	return widgets, nil
+	return nil
 }
 
 // Execute an adapter command for the given device and parametrization.

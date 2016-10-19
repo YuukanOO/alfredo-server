@@ -10,10 +10,20 @@ import (
 func getAlfredoSystemInfos(c *gin.Context) {
 
 	curEnv := env.Current()
+	protocol := "http://"
+	remote := curEnv.Server.Remote
+
+	if curEnv.Server.UseHTTPS {
+		protocol = "https://"
+	}
+
+	if remote != "" {
+		remote = protocol + remote
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"version": env.Version,
-		"local":   curEnv.Server.Listen,
-		"remote":  curEnv.Server.Remote,
+		"local":   protocol + curEnv.Server.Listen,
+		"remote":  remote,
 	})
 }

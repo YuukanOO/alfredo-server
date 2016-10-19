@@ -1,6 +1,8 @@
 [server]
 # Where to bind
 listen="192.168.0.15:8080"
+# Wether you want to communicate via https
+useHTTPS=false
 # Remote access address
 remote=""
 # Allowed origins for CORS
@@ -9,8 +11,6 @@ allowedOrigins=["*"]
 shellCommand=["sh", "-c"]
 # On windows, it should be
 # shellCommand=["cmd", "/c"]
-# Cache folder where stuff like widgets generated will be store
-cachePath="cache"
 
 [database]
 # Urls of mongodb server

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -27,8 +26,8 @@ const (
 // relative to the HTTP server.
 type ServerConfig struct {
 	Listen         string
+	UseHTTPS       bool
 	Remote         string
-	CachePath      string
 	AllowedOrigins []string
 	ShellCommand   []string
 }
@@ -100,11 +99,6 @@ func LoadAdapters(path string) error {
 	}
 
 	if err = json.Unmarshal(data, &current.Adapters); err != nil {
-		return err
-	}
-
-	// Make sure the cache folder exists
-	if err = os.MkdirAll(current.Server.CachePath, os.ModeExclusive); err != nil {
 		return err
 	}
 

@@ -63,13 +63,9 @@ func main() {
 		},
 		cli.Command{
 			Name:  "reset",
-			Usage: "Drops the database and the cache to start from a fresh start. Used mostly for dev.",
+			Usage: "Resets all environment configuration. Used mostly for dev.",
 			Action: func(c *cli.Context) error {
 				if err := env.LoadFromFile(configPath); err != nil {
-					return err
-				}
-
-				if err := os.RemoveAll(env.Current().Server.CachePath); err != nil {
 					return err
 				}
 

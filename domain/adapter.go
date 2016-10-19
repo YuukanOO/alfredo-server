@@ -10,12 +10,13 @@ import (
 
 // Adapter represents an available smart adapter.
 type Adapter struct {
-	ID       string                 `json:"id"`
-	Name     string                 `json:"name"`
-	Category string                 `json:"category"`
-	Config   map[string]interface{} `json:"config"`
-	Commands map[string]string      `json:"commands"`
-	Widgets  map[string]string      `json:"widgets"`
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Category    string                 `json:"category"`
+	Config      map[string]interface{} `json:"config"`
+	Commands    map[string]string      `json:"commands"`
+	Widgets     map[string]string      `json:"widgets"`
 
 	commandsParsed map[string]*template.Template
 }

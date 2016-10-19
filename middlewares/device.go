@@ -28,7 +28,7 @@ func Device() gin.HandlerFunc {
 			err := db.C(env.DevicesCollection).FindId(id).One(&device)
 
 			if err != nil {
-				c.AbortWithStatus(http.StatusNotFound)
+				AbortWithError(c, http.StatusBadRequest, err)
 			} else {
 				c.Set(DeviceKey, &device)
 				c.Next()

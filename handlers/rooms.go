@@ -13,14 +13,14 @@ import (
 )
 
 type createRoomParams struct {
-	Name string
+	Name string `binding:"required"`
 }
 
 func createRoom(c *gin.Context) {
 	var params createRoomParams
 
 	if err := c.BindJSON(&params); err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		middlewares.AbortWithError(c, http.StatusBadRequest, err)
 	} else {
 		controller := c.MustGet(middlewares.ControllerKey).(domain.Controller)
 		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
@@ -29,7 +29,7 @@ func createRoom(c *gin.Context) {
 		room, err := controller.CreateRoom(roomsCollection.Find, params.Name)
 
 		if err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
+			middlewares.AbortWithError(c, http.StatusBadRequest, err)
 		} else {
 			if err = roomsCollection.Insert(room); err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
@@ -44,7 +44,7 @@ func updateRoom(c *gin.Context) {
 	var params createRoomParams
 
 	if err := c.BindJSON(&params); err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		middlewares.AbortWithError(c, http.StatusBadRequest, err)
 	} else {
 		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 		room := c.MustGet(middlewares.RoomKey).(*domain.Room)
@@ -53,7 +53,7 @@ func updateRoom(c *gin.Context) {
 		err := room.Rename(roomsCollection.Find, params.Name)
 
 		if err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
+			middlewares.AbortWithError(c, http.StatusBadRequest, err)
 		} else {
 			if err := roomsCollection.UpdateId(room.ID, room); err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
@@ -87,7 +87,7 @@ func removeRoom(c *gin.Context) {
 	room := c.MustGet(middlewares.RoomKey).(*domain.Room)
 
 	if err := db.C(env.RoomsCollection).RemoveId(room.ID); err != nil {
-		c.AbortWithError(http.StatusNotFound, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 	} else {
 		c.AbortWithStatus(http.StatusOK)
 	}

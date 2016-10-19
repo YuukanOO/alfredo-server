@@ -28,7 +28,7 @@ func Room() gin.HandlerFunc {
 			err := db.C(env.RoomsCollection).FindId(id).One(&room)
 
 			if err != nil {
-				c.AbortWithStatus(http.StatusNotFound)
+				AbortWithError(c, http.StatusNotFound, err)
 			} else {
 				c.Set(RoomKey, &room)
 				c.Next()

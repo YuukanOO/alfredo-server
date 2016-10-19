@@ -24,6 +24,7 @@ func Register(eng *gin.Engine) {
 	auth.POST("/rooms", createRoom)
 	requireRoom.PUT("/rooms/:room_id", updateRoom)
 	requireRoom.DELETE("/rooms/:room_id", removeRoom)
+	requireRoom.GET("/rooms/:room_id/devices", getRoomDevices)
 
 	// Devices
 	auth.GET("/devices", getAllDevices)

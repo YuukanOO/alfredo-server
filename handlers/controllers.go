@@ -12,14 +12,14 @@ import (
 )
 
 type registerControllerParams struct {
-	UID string
+	UID string `binding:"required"`
 }
 
 func registerController(c *gin.Context) {
 	var params registerControllerParams
 
 	if err := c.BindJSON(&params); err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		middlewares.AbortWithError(c, http.StatusBadRequest, err)
 	} else {
 		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 		controllersCollection := db.C(env.ControllersCollection)
@@ -27,7 +27,7 @@ func registerController(c *gin.Context) {
 		controller, err := domain.RegisterController(controllersCollection.Find, []byte(env.Current().Security.Secret), params.UID)
 
 		if err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
+			middlewares.AbortWithError(c, http.StatusBadRequest, err)
 		} else {
 			if _, err = controllersCollection.UpsertId(controller.ID, controller); err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)

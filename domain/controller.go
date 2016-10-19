@@ -19,7 +19,7 @@ func newController(uid string) *Controller {
 	}
 }
 
-// CreateRoom tries to create a new room for with this controller.
+// CreateRoom tries to create a new room for this controller.
 func (c *Controller) CreateRoom(findRooms QueryFunc, name string) (*Room, error) {
 	var existingRoom Room
 

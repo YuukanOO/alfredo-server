@@ -50,6 +50,38 @@ func createDevice(c *gin.Context) {
 	}
 }
 
+type updateDeviceParams struct {
+	Name   string `binding:"required"`
+	Config map[string]interface{}
+}
+
+func updateDevice(c *gin.Context) {
+	var params updateDeviceParams
+
+	if err := c.BindJSON(&params); err != nil {
+		middlewares.AbortWithError(c, http.StatusBadRequest, err)
+	} else {
+		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+		device := c.MustGet(middlewares.DeviceKey).(*domain.Device)
+		adapter := env.Current().GetAdapter(device.Adapter)
+		deviceCollection := db.C(env.DevicesCollection)
+
+		if err := device.Rename(deviceCollection.Find, params.Name); err != nil {
+			middlewares.AbortWithError(c, http.StatusBadRequest, err)
+		} else {
+			if err := device.UpdateConfig(adapter, params.Config); err != nil {
+				middlewares.AbortWithError(c, http.StatusBadRequest, err)
+			} else {
+				if err := deviceCollection.UpdateId(device.ID, device); err != nil {
+					c.AbortWithError(http.StatusInternalServerError, err)
+				} else {
+					c.JSON(http.StatusOK, device)
+				}
+			}
+		}
+	}
+}
+
 func getAllDevices(c *gin.Context) {
 	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 

@@ -38,11 +38,8 @@ func (room *Room) RegisterDevice(
 
 	// First, validates the config by looking each needed adapter config values
 	// in the given config map
-	for ck := range adapter.Config {
-		// TODO: type checking maybe...
-		if config[ck] == nil {
-			return nil, ErrDeviceConfigInvalid
-		}
+	if err := adapter.ValidateConfig(config); err != nil {
+		return nil, err
 	}
 
 	device := newDevice(room.ID, name, adapter.ID, config)

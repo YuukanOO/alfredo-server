@@ -21,6 +21,18 @@ type Adapter struct {
 	commandsParsed map[string]*template.Template
 }
 
+// ValidateConfig validates the adapter configuration with given parameters.
+func (adp *Adapter) ValidateConfig(config map[string]interface{}) error {
+	for ck := range adp.Config {
+		// TODO: type checking maybe...
+		if config[ck] == nil {
+			return ErrDeviceConfigInvalid
+		}
+	}
+
+	return nil
+}
+
 // ParseCommands parses all commands to a valid go text template ready to be use.
 func (adp *Adapter) ParseCommands() error {
 	commands := map[string]*template.Template{}

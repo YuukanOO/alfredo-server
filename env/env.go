@@ -87,7 +87,7 @@ func LoadFromFile(path string) error {
 // transformWidget will append necessary arrow function to easily integrates the widget in
 // a client environment.
 func transformWidget(widget string) string {
-	return fmt.Sprintf("({ device, command }) => %s", widget)
+	return fmt.Sprintf("function(device, command) { return %s; }", widget)
 }
 
 // LoadAdapters tries to load the smart adapters from a JSON file.

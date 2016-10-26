@@ -2,6 +2,7 @@
     "name": "alfredo-server-react-transform",
     "dependencies": {
         "babel-core": "^6.17.0",
-        "babel-plugin-transform-react-jsx": "^6.8.0"
+        "babel-plugin-transform-react-jsx": "^6.8.0",
+        "babel-plugin-transform-es2015-arrow-functions": "^6.8.0"
     }
 }

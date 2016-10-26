@@ -2,7 +2,7 @@
     "id": "tv-samsung",
     "name": "Samsung TV",
     "description": "Permet de contrôler les téléviseurs Samsung.",
-    "category": "tv",
+    "category": "TV",
     "config": {
         "ip": "string",
         "model": "string"
@@ -12,6 +12,6 @@
         "echo": "{{ range $key, $value := .Params }}echo {{$key}} {{$value}} && {{ end }} echo Done"
     },
     "widgets": {
-        "tile": "<Tile name={device.name} icon=\"tv\" onPress={() => command('sendkey', { key: KEY_MUTE })} />"
+        "tile": "<Tile key={device.id} text={device.name} icon=\"tv\" onPress={() => command('sendkey', { key: 'KEY_MUTE' })} />"
     }
 }]

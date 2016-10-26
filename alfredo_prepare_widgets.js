@@ -1,4 +1,6 @@
-require("babel-plugin-transform-react-jsx");
 console.log(require("babel-core").transform(process.argv[2], {
-  plugins: ["transform-react-jsx"]
+  plugins: [
+    "transform-react-jsx",
+    "transform-es2015-arrow-functions",
+  ],
 }).code);

@@ -135,8 +135,8 @@ func (adp *Adapter) Execute(shell []string, command string, device *Device, para
 
 	result := &ExecutionResult{
 		Success: cmd.ProcessState.Success(),
-		Err:     stderr.String(),
-		Out:     stdout.String(),
+		Err:     strings.TrimSpace(stderr.String()),
+		Out:     strings.TrimSpace(stdout.String()),
 	}
 
 	if err != nil {

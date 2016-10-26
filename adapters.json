@@ -1,17 +1,35 @@
-[{
-    "id": "tv-samsung",
-    "name": "Samsung TV",
-    "description": "Permet de contrôler les téléviseurs Samsung.",
-    "category": "TV",
-    "config": {
-        "ip": "string",
-        "model": "string"
+[
+    {
+        "id": "tv-samsung",
+        "name": "Samsung TV",
+        "description": "Permet de contrôler les téléviseurs Samsung.",
+        "category": "TV",
+        "config": {
+            "ip": "string",
+            "model": "string"
+        },
+        "commands": {
+            "sendkey": "rtv {{.Config.model}} {{.Config.ip}} {{.Params.key}}",
+            "echo": "{{ range $key, $value := .Params }}echo {{$key}} {{$value}} && {{ end }} echo Done"
+        },
+        "widgets": {
+            "tile": "<Tile key={device.id} text={device.name} icon=\"tv\" onPress={() => command('sendkey', { key: 'KEY_MUTE' })} />"
+        }
     },
-    "commands": {
-        "sendkey": "rtv {{.Config.model}} {{.Config.ip}} {{.Params.key}}",
-        "echo": "{{ range $key, $value := .Params }}echo {{$key}} {{$value}} && {{ end }} echo Done"
-    },
-    "widgets": {
-        "tile": "<Tile key={device.id} text={device.name} icon=\"tv\" onPress={() => command('sendkey', { key: 'KEY_MUTE' })} />"
+    {
+        "id": "light-milight",
+        "name": "Milight",
+        "description": "Contrôle des lampes milight",
+        "category": "Lights",
+        "config": {
+            "ip": "string"
+        },
+        "commands": {
+            "on": "echo on",
+            "off": "echo off"
+        },
+        "widgets": {
+            "tile": "<Tile key={device.id} text={device.name} icon=\"lightbulb-outline\" iconColor=\"#fdf574\" muted detail=\"test\" onPress={() => command('on')} />"
+        }
     }
-}]
+]

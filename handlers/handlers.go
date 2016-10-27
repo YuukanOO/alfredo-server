@@ -30,6 +30,6 @@ func Register(eng *gin.Engine) {
 	auth.GET("/devices", getAllDevices)
 	auth.POST("/devices", createDevice)
 	requireDevice.PUT("/devices/:device_id", updateDevice)
-	requireDevice.PUT("/devices/:device_id/:device_command", deviceExecuteCommand)
+	requireDevice.POST("/devices/:device_id/:device_command", deviceExecuteCommand)
 	requireDevice.DELETE("/devices/:device_id", removeDevice)
 }

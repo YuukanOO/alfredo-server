@@ -1,6 +1,10 @@
 package domain
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	"encoding/json"
+
+	"gopkg.in/mgo.v2/bson"
+)
 
 // Device represents a smart device connected to our system
 type Device struct {
@@ -9,6 +13,7 @@ type Device struct {
 	Name    string                 `bson:"name" json:"name"`
 	Adapter string                 `bson:"adapter" json:"adapter"`
 	Config  map[string]interface{} `bson:"config" json:"config"`
+	Status  interface{}            `bson:"status" json:"status"`
 }
 
 func newDevice(
@@ -45,4 +50,18 @@ func (device *Device) UpdateConfig(adapter *Adapter, config map[string]interface
 	device.Config = config
 
 	return nil
+}
+
+// UpdateStatus updates the device status based on the givne execution result.
+func (device *Device) UpdateStatus(result *ExecutionResult) {
+	// If the execution stdout result is empty, don't update the device status
+	if result.Out == "" {
+		return
+	}
+
+	// For now, we just check if the output could be parsed into a json interface
+	if err := json.Unmarshal([]byte(result.Out), &device.Status); err != nil {
+		// If not, we revert to using just the result string as the new device status
+		device.Status = result.Out
+	}
 }

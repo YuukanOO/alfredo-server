@@ -136,6 +136,7 @@ func deviceExecuteCommand(c *gin.Context) {
 	if err := c.BindJSON(&commandParameters); err != nil {
 		middlewares.AbortWithError(c, http.StatusBadRequest, err)
 	} else {
+		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
 		device := c.MustGet(middlewares.DeviceKey).(*domain.Device)
 		adapter := env.Current().GetAdapter(device.Adapter)
 		command := c.Param("device_command")
@@ -143,11 +144,21 @@ func deviceExecuteCommand(c *gin.Context) {
 		if adapter == nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
 		} else {
+			// Executes the command
 			res, err := adapter.Execute(env.Current().Server.ShellCommand, command, device, commandParameters)
 
 			if err == nil {
-				c.JSON(http.StatusOK, res)
+				// If everything is good, update the device status given the execution result
+				// and returns the new device status.
+				device.UpdateStatus(res)
+
+				if err := db.C(env.DevicesCollection).UpdateId(device.ID, device); err != nil {
+					c.AbortWithError(http.StatusInternalServerError, err)
+				} else {
+					c.JSON(http.StatusOK, device.Status)
+				}
 			} else {
+				// If something goes wrong, it will print the execution result to ease the debugging
 				if res == nil {
 					middlewares.AbortWithError(c, http.StatusBadRequest, err)
 				} else {

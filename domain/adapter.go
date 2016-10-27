@@ -94,8 +94,7 @@ func (adp *Adapter) ParseWidgets(transformWidgets func(string) string) error {
 	return nil
 }
 
-// Execute an adapter command for the given device and parametrization.
-func (adp *Adapter) Execute(shell []string, command string, device *Device, params map[string]interface{}) (*ExecutionResult, error) {
+func (adp *Adapter) getTemplateForCommand(command string) (*template.Template, error) {
 	// Check if the command has been parsed first
 	tmpl := adp.commandsParsed[command]
 
@@ -112,8 +111,19 @@ func (adp *Adapter) Execute(shell []string, command string, device *Device, para
 		return nil, ErrAdapterCommandNotFound
 	}
 
+	return tmpl, nil
+}
+
+// Execute an adapter command for the given device and parametrization.
+func (adp *Adapter) Execute(shell []string, command string, device *Device, params map[string]interface{}) (*ExecutionResult, error) {
+	tmpl, err := adp.getTemplateForCommand(command)
+
+	if err != nil {
+		return nil, err
+	}
+
 	// Creates the execution context available in the command template
-	ctx := newExecutionContext(device.Config, params)
+	ctx := newExecutionContext(adp, device.Config, params)
 
 	var buf bytes.Buffer
 
@@ -131,7 +141,7 @@ func (adp *Adapter) Execute(shell []string, command string, device *Device, para
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 
 	result := &ExecutionResult{
 		Success: cmd.ProcessState.Success(),
@@ -139,9 +149,5 @@ func (adp *Adapter) Execute(shell []string, command string, device *Device, para
 		Out:     strings.TrimSpace(stdout.String()),
 	}
 
-	if err != nil {
-		return result, err
-	}
-
-	return result, nil
+	return result, err
 }

@@ -1,10 +1,13 @@
 package env
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"strings"
+
+	"os/exec"
 
 	"github.com/BurntSushi/toml"
 	"github.com/YuukanOO/alfredo/domain"
@@ -20,6 +23,8 @@ const (
 	RoomsCollection = "rooms"
 	// DevicesCollection is the name of the mongo collection
 	DevicesCollection = "devices"
+	// TransformScript represents the script used to transform jsx
+	TransformScript = "console.log(require('babel-core').transform(process.argv[1], { plugins: ['transform-react-jsx', 'transform-es2015-arrow-functions'],}).code);"
 )
 
 // ServerConfig  represents the current environment settings
@@ -84,10 +89,24 @@ func LoadFromFile(path string) error {
 	return err
 }
 
-// transformWidget will append necessary arrow function to easily integrates the widget in
-// a client environment.
-func transformWidget(widget string) string {
-	return fmt.Sprintf("function(device, command) { return %s; }", widget)
+// transformWidget will transform the jsx into a valid React component ready to be used.
+func transformWidget(widget string) (string, error) {
+	// TODO: more robust error handling
+	cmd := exec.Command("node", "-e", TransformScript, widget)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		return "", domain.NewErrCommandFailed(cmd, err, stderr.String())
+	}
+
+	return fmt.Sprintf("function(device, command, detail) { return %s; }", strings.TrimSpace(stdout.String())), nil
 }
 
 // LoadAdapters tries to load the smart adapters from a JSON file.

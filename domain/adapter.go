@@ -54,7 +54,7 @@ func (adp *Adapter) ParseCommands() error {
 
 // ParseWidgets will transform jsx to valid js and replace the inner maps of widgets of this adapter.
 // It will use the given transform func to add additional data to the parsed widget string.
-func (adp *Adapter) ParseWidgets(transformWidgets func(string) string) error {
+func (adp *Adapter) ParseWidgets(transformWidget func(string) (string, error)) error {
 	// Loop through each widgets in the json file and process them
 	for k, v := range adp.Widgets {
 		widgetStr := ""
@@ -72,23 +72,13 @@ func (adp *Adapter) ParseWidgets(transformWidgets func(string) string) error {
 			widgetStr = string(data)
 		}
 
-		// TODO: more robust error handling
-
-		nodeCmd := exec.Command("node", "alfredo_prepare_widgets.js", widgetStr)
-
-		var stdout bytes.Buffer
-		var stderr bytes.Buffer
-
-		nodeCmd.Stdout = &stdout
-		nodeCmd.Stderr = &stderr
-
-		err := nodeCmd.Run()
+		res, err := transformWidget(widgetStr)
 
 		if err != nil {
-			return NewErrCommandFailed(nodeCmd, err, stderr.String())
+			return err
 		}
 
-		adp.Widgets[k] = transformWidgets(strings.TrimSpace(stdout.String()))
+		adp.Widgets[k] = res
 	}
 
 	return nil

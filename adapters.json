@@ -13,7 +13,7 @@
             "status": "ping -c 1 -W 1 {{.Config.ip}} > /dev/null && echo '{ \"awake\": true }' || echo '{ \"awake\": false }'"
         },
         "widgets": {
-            "tile": "<Tile key={device.id} text={device.name} icon=\"tv\" muted={!device.status.awake} onPress={() => command('sendkey', { key: 'KEY_MUTE' })} />"
+            "tile": "<Tile key={device.id} text={device.name} icon=\"tv\" muted={!device.status.awake} onLongPress={detail} onPress={() => command('sendkey', { key: 'KEY_MUTE' })} />"
         }
     },
     {

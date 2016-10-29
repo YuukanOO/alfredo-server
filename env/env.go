@@ -106,7 +106,7 @@ func transformWidget(widget string) (string, error) {
 		return "", domain.NewErrCommandFailed(cmd, err, stderr.String())
 	}
 
-	return fmt.Sprintf("function(device, command, detail) { return %s; }", strings.TrimSpace(stdout.String())), nil
+	return fmt.Sprintf("function(device, command, showView) { return %s; }", strings.TrimSpace(stdout.String())), nil
 }
 
 // LoadAdapters tries to load the smart adapters from a JSON file.

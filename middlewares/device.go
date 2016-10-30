@@ -6,12 +6,15 @@ import (
 	"github.com/YuukanOO/alfredo/domain"
 	"github.com/YuukanOO/alfredo/env"
 	"github.com/gin-gonic/gin"
-	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-// DeviceKey in the context
-const DeviceKey = "device"
+const deviceKey = "device"
+
+// GetDevice retrieves the device attached to this context
+func GetDevice(c *gin.Context) *domain.Device {
+	return c.MustGet(deviceKey).(*domain.Device)
+}
 
 // Device ensure a valid device has been given in the request.
 func Device() gin.HandlerFunc {
@@ -21,7 +24,7 @@ func Device() gin.HandlerFunc {
 		if !id.Valid() {
 			c.AbortWithStatus(http.StatusBadRequest)
 		} else {
-			db := c.MustGet(DBKey).(*mgo.Database)
+			db := GetDB(c)
 
 			var device domain.Device
 
@@ -30,7 +33,7 @@ func Device() gin.HandlerFunc {
 			if err != nil {
 				AbortWithError(c, http.StatusBadRequest, err)
 			} else {
-				c.Set(DeviceKey, &device)
+				c.Set(deviceKey, &device)
 				c.Next()
 			}
 		}

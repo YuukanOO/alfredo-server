@@ -3,10 +3,15 @@ package middlewares
 import (
 	"github.com/YuukanOO/alfredo/env"
 	"github.com/gin-gonic/gin"
+	mgo "gopkg.in/mgo.v2"
 )
 
-// DBKey in the context
-const DBKey = "db"
+const dbKey = "db"
+
+// GetDB retrieves the db attached to this context.
+func GetDB(c *gin.Context) *mgo.Database {
+	return c.MustGet(dbKey).(*mgo.Database)
+}
 
 // DB middleware which open and close a DB session for each request
 func DB() gin.HandlerFunc {
@@ -14,7 +19,7 @@ func DB() gin.HandlerFunc {
 		session, db := env.Current().Database.GetSession()
 		defer session.Close()
 
-		c.Set(DBKey, db)
+		c.Set(dbKey, db)
 
 		c.Next()
 	}

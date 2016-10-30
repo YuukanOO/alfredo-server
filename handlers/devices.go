@@ -7,7 +7,6 @@ import (
 	"github.com/YuukanOO/alfredo/env"
 	"github.com/YuukanOO/alfredo/middlewares"
 	"github.com/gin-gonic/gin"
-	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -24,7 +23,7 @@ func createDevice(c *gin.Context) {
 	if err := c.BindJSON(&params); err != nil {
 		middlewares.AbortWithError(c, http.StatusBadRequest, err)
 	} else {
-		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+		db := middlewares.GetDB(c)
 		var room domain.Room
 
 		err := db.C(env.RoomsCollection).FindId(params.RoomID).One(&room)
@@ -40,6 +39,11 @@ func createDevice(c *gin.Context) {
 			if err != nil {
 				middlewares.AbortWithError(c, http.StatusBadRequest, err)
 			} else {
+				// Upon device creation, try to execute a command named status
+				if outRes, _ := adapter.Execute(env.Current().Server.ShellCommand, "status", device, map[string]interface{}{}); outRes != nil {
+					device.UpdateStatus(outRes)
+				}
+
 				if err = devicesCollection.Insert(device); err != nil {
 					c.AbortWithError(http.StatusInternalServerError, err)
 				} else {
@@ -61,8 +65,8 @@ func updateDevice(c *gin.Context) {
 	if err := c.BindJSON(&params); err != nil {
 		middlewares.AbortWithError(c, http.StatusBadRequest, err)
 	} else {
-		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
-		device := c.MustGet(middlewares.DeviceKey).(*domain.Device)
+		db := middlewares.GetDB(c)
+		device := middlewares.GetDevice(c)
 		adapter := env.Current().GetAdapter(device.Adapter)
 		deviceCollection := db.C(env.DevicesCollection)
 
@@ -83,7 +87,7 @@ func updateDevice(c *gin.Context) {
 }
 
 func getAllDevices(c *gin.Context) {
-	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+	db := middlewares.GetDB(c)
 
 	var devices []domain.Device
 
@@ -101,8 +105,8 @@ func getAllDevices(c *gin.Context) {
 }
 
 func getRoomDevices(c *gin.Context) {
-	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
-	room := c.MustGet(middlewares.RoomKey).(*domain.Room)
+	db := middlewares.GetDB(c)
+	room := middlewares.GetRoom(c)
 
 	var devices []domain.Device
 
@@ -120,8 +124,8 @@ func getRoomDevices(c *gin.Context) {
 }
 
 func removeDevice(c *gin.Context) {
-	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
-	device := c.MustGet(middlewares.DeviceKey).(*domain.Device)
+	db := middlewares.GetDB(c)
+	device := middlewares.GetDevice(c)
 
 	if err := db.C(env.DevicesCollection).RemoveId(device.ID); err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -136,8 +140,8 @@ func deviceExecuteCommand(c *gin.Context) {
 	if err := c.BindJSON(&commandParameters); err != nil {
 		middlewares.AbortWithError(c, http.StatusBadRequest, err)
 	} else {
-		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
-		device := c.MustGet(middlewares.DeviceKey).(*domain.Device)
+		db := middlewares.GetDB(c)
+		device := middlewares.GetDevice(c)
 		adapter := env.Current().GetAdapter(device.Adapter)
 		command := c.Param("device_command")
 

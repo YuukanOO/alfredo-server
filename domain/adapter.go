@@ -10,13 +10,14 @@ import (
 
 // Adapter represents an available smart adapter.
 type Adapter struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Category    string                 `json:"category"`
-	Config      map[string]interface{} `json:"config"`
-	Commands    map[string]string      `json:"commands"`
-	Widgets     map[string]string      `json:"widgets"`
+	ID           string                 `json:"id" bson:"id"`
+	Name         string                 `json:"name" bson:"name"`
+	Description  string                 `json:"description" bson:"description"`
+	Dependencies []string               `json:"dependencies" bson:"dependencies"`
+	Category     string                 `json:"category" bson:"category"`
+	Config       map[string]interface{} `json:"config" bson:"config"`
+	Commands     map[string]string      `json:"commands" bson:"commands"`
+	Widgets      map[string]string      `json:"widgets" bson:"widgets"`
 
 	commandsParsed map[string]*template.Template
 }
@@ -113,7 +114,7 @@ func (adp *Adapter) Execute(shell []string, command string, device *Device, para
 	}
 
 	// Creates the execution context available in the command template
-	ctx := newExecutionContext(adp, device.Config, params)
+	ctx := newExecutionContext(adp, device, params)
 
 	var buf bytes.Buffer
 

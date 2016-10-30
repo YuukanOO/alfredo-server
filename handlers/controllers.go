@@ -3,8 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	mgo "gopkg.in/mgo.v2"
-
 	"github.com/YuukanOO/alfredo/domain"
 	"github.com/YuukanOO/alfredo/env"
 	"github.com/YuukanOO/alfredo/middlewares"
@@ -21,7 +19,7 @@ func registerController(c *gin.Context) {
 	if err := c.BindJSON(&params); err != nil {
 		middlewares.AbortWithError(c, http.StatusBadRequest, err)
 	} else {
-		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+		db := middlewares.GetDB(c)
 		controllersCollection := db.C(env.ControllersCollection)
 
 		controller, err := domain.RegisterController(controllersCollection.Find, []byte(env.Current().Security.Secret), params.UID)

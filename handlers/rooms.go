@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/YuukanOO/alfredo/domain"
@@ -22,8 +21,8 @@ func createRoom(c *gin.Context) {
 	if err := c.BindJSON(&params); err != nil {
 		middlewares.AbortWithError(c, http.StatusBadRequest, err)
 	} else {
-		controller := c.MustGet(middlewares.ControllerKey).(domain.Controller)
-		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+		controller := middlewares.GetController(c)
+		db := middlewares.GetDB(c)
 		roomsCollection := db.C(env.RoomsCollection)
 
 		room, err := controller.CreateRoom(roomsCollection.Find, params.Name)
@@ -46,8 +45,8 @@ func updateRoom(c *gin.Context) {
 	if err := c.BindJSON(&params); err != nil {
 		middlewares.AbortWithError(c, http.StatusBadRequest, err)
 	} else {
-		db := c.MustGet(middlewares.DBKey).(*mgo.Database)
-		room := c.MustGet(middlewares.RoomKey).(*domain.Room)
+		db := middlewares.GetDB(c)
+		room := middlewares.GetRoom(c)
 		roomsCollection := db.C(env.RoomsCollection)
 
 		err := room.Rename(roomsCollection.Find, params.Name)
@@ -65,7 +64,7 @@ func updateRoom(c *gin.Context) {
 }
 
 func getAllRooms(c *gin.Context) {
-	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
+	db := middlewares.GetDB(c)
 
 	var rooms []domain.Room
 
@@ -83,8 +82,8 @@ func getAllRooms(c *gin.Context) {
 }
 
 func removeRoom(c *gin.Context) {
-	db := c.MustGet(middlewares.DBKey).(*mgo.Database)
-	room := c.MustGet(middlewares.RoomKey).(*domain.Room)
+	db := middlewares.GetDB(c)
+	room := middlewares.GetRoom(c)
 
 	if err := db.C(env.RoomsCollection).RemoveId(room.ID); err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)

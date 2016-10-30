@@ -6,12 +6,15 @@ import (
 	"github.com/YuukanOO/alfredo/domain"
 	"github.com/YuukanOO/alfredo/env"
 	"github.com/gin-gonic/gin"
-	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-// RoomKey in the context
-const RoomKey = "room"
+const roomKey = "room"
+
+// GetRoom retrieves the room attached to this context
+func GetRoom(c *gin.Context) *domain.Room {
+	return c.MustGet(roomKey).(*domain.Room)
+}
 
 // Room middleware used to ensure a valid room_id has been given
 func Room() gin.HandlerFunc {
@@ -21,7 +24,7 @@ func Room() gin.HandlerFunc {
 		if !id.Valid() {
 			c.AbortWithStatus(http.StatusBadRequest)
 		} else {
-			db := c.MustGet(DBKey).(*mgo.Database)
+			db := GetDB(c)
 
 			var room domain.Room
 
@@ -30,7 +33,7 @@ func Room() gin.HandlerFunc {
 			if err != nil {
 				AbortWithError(c, http.StatusNotFound, err)
 			} else {
-				c.Set(RoomKey, &room)
+				c.Set(roomKey, &room)
 				c.Next()
 			}
 		}

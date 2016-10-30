@@ -15,8 +15,12 @@ import (
 const authHeaderValue = "Authorization"
 const bearerHeaderValue = "Bearer "
 
-// ControllerKey in the context
-const ControllerKey = "controller"
+const controllerKey = "controller"
+
+// GetController retrieves the controller attached to this context
+func GetController(c *gin.Context) *domain.Controller {
+	return c.MustGet(controllerKey).(*domain.Controller)
+}
 
 // Auth restrict access to valid tokens.
 func Auth() gin.HandlerFunc {
@@ -38,7 +42,7 @@ func Auth() gin.HandlerFunc {
 				claims, _ := token.Claims.(jwt.MapClaims)
 				idStr := claims["sub"].(string)
 
-				c.Set(ControllerKey, domain.Controller{
+				c.Set(controllerKey, &domain.Controller{
 					ID: bson.ObjectIdHex(idStr),
 				})
 				c.Next()

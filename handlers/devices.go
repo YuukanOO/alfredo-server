@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/YuukanOO/alfredo/domain"
 	"github.com/YuukanOO/alfredo/env"
 	"github.com/YuukanOO/alfredo/middlewares"
@@ -164,8 +165,14 @@ func deviceExecuteCommand(c *gin.Context) {
 			} else {
 				// If something goes wrong, it will print the execution result to ease the debugging
 				if res == nil {
+					logrus.WithError(err).Error("Command execution failed")
+
 					middlewares.AbortWithError(c, http.StatusBadRequest, err)
 				} else {
+					logrus.WithFields(logrus.Fields{
+						"error": res.Err,
+					}).Warn("Command execution failed")
+
 					c.JSON(http.StatusBadRequest, res)
 				}
 			}

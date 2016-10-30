@@ -14,23 +14,27 @@ type registerControllerParams struct {
 }
 
 func registerController(c *gin.Context) {
-	var params registerControllerParams
-
-	if err := c.BindJSON(&params); err != nil {
-		middlewares.AbortWithError(c, http.StatusBadRequest, err)
+	if !env.Current().Server.AllowRegistering {
+		c.AbortWithStatus(http.StatusNotFound)
 	} else {
-		db := middlewares.GetDB(c)
-		controllersCollection := db.C(env.ControllersCollection)
+		var params registerControllerParams
 
-		controller, err := domain.RegisterController(controllersCollection.Find, []byte(env.Current().Security.Secret), params.UID)
-
-		if err != nil {
+		if err := c.BindJSON(&params); err != nil {
 			middlewares.AbortWithError(c, http.StatusBadRequest, err)
 		} else {
-			if _, err = controllersCollection.UpsertId(controller.ID, controller); err != nil {
-				c.AbortWithError(http.StatusInternalServerError, err)
+			db := middlewares.GetDB(c)
+			controllersCollection := db.C(env.ControllersCollection)
+
+			controller, err := domain.RegisterController(controllersCollection.Find, []byte(env.Current().Security.Secret), params.UID)
+
+			if err != nil {
+				middlewares.AbortWithError(c, http.StatusBadRequest, err)
 			} else {
-				c.JSON(http.StatusOK, controller.Token)
+				if _, err = controllersCollection.UpsertId(controller.ID, controller); err != nil {
+					c.AbortWithError(http.StatusInternalServerError, err)
+				} else {
+					c.JSON(http.StatusOK, controller.Token)
+				}
 			}
 		}
 	}

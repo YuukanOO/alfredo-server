@@ -11,6 +11,10 @@ allowedOrigins=["*"]
 shellCommand=["sh", "-c"]
 # On windows, it should be
 # shellCommand=["cmd", "/c"]
+# Log level used by the server logger
+logLevel="debug"
+# Allow new controller to register to this instance
+allowRegistering=true
 
 [database]
 # Urls of mongodb server

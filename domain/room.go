@@ -38,7 +38,7 @@ func (room *Room) RegisterDevice(
 
 	// First, validates the config by looking each needed adapter config values
 	// in the given config map
-	if err := adapter.ValidateConfig(config); err != nil {
+	if err := adapter.validateConfig(config); err != nil {
 		return nil, err
 	}
 

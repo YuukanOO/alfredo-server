@@ -21,6 +21,11 @@ func And(selectors ...bson.M) bson.M {
 	return result
 }
 
+// All creates a selector that will match all documents
+func All() bson.M {
+	return bson.M{}
+}
+
 // ByName finds an element by its name
 func ByName(name string) bson.M {
 	return bson.M{

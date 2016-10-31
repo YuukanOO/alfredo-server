@@ -2,30 +2,134 @@ package domain
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"text/template"
 )
 
+// TransformScript represents the script used to transform jsx
+const TransformScript = "console.log(require('babel-core').transform(process.argv[1], { plugins: ['transform-react-jsx', 'transform-es2015-arrow-functions'],}).code);"
+
 // Adapter represents an available smart adapter.
 type Adapter struct {
-	ID           string                 `json:"id" bson:"id"`
-	Name         string                 `json:"name" bson:"name"`
-	Description  string                 `json:"description" bson:"description"`
-	Dependencies []string               `json:"dependencies" bson:"dependencies"`
-	Category     string                 `json:"category" bson:"category"`
-	Config       map[string]interface{} `json:"config" bson:"config"`
-	Commands     map[string]string      `json:"commands" bson:"commands"`
-	Widgets      map[string]string      `json:"widgets" bson:"widgets"`
+	ID              string            `json:"id" bson:"_id"`
+	Name            string            `json:"name" bson:"name"`
+	Description     string            `json:"description" bson:"description"`
+	Dependencies    []string          `json:"dependencies" bson:"dependencies"`
+	Category        string            `json:"category" bson:"category"`
+	Config          map[string]string `json:"config" bson:"config"`
+	Commands        map[string]string `json:"commands" bson:"commands"`
+	Widgets         map[string]string `json:"widgets" bson:"widgets"`
+	WidgetsCheckSum map[string]string `json:"-" bson:"widgets_checksum"`
 
 	commandsParsed map[string]*template.Template
 }
 
-// ValidateConfig validates the adapter configuration with given parameters.
-func (adp *Adapter) ValidateConfig(config map[string]interface{}) error {
+func (adp *Adapter) computeWidgetsCheckSum(relativeDir string) (string, error) {
+	// Loaded from file, compute widgets checksum
+	if len(adp.WidgetsCheckSum) == 0 {
+		adp.WidgetsCheckSum = map[string]string{}
+
+		for k, wid := range adp.Widgets {
+			if IsComponent(wid) {
+				adp.WidgetsCheckSum[k] = ComputeCheckSum([]byte(wid))
+			} else {
+				data, err := ioutil.ReadFile(filepath.Join(relativeDir, wid))
+
+				if err != nil {
+					return "", err
+				}
+
+				adp.WidgetsCheckSum[k] = ComputeCheckSum(data)
+			}
+		}
+	}
+
+	data, err := GetBytes(SortedValues(SortedKeys(adp.WidgetsCheckSum), adp.WidgetsCheckSum))
+
+	if err != nil {
+		return "", err
+	}
+
+	return ComputeCheckSum(data), nil
+}
+
+// LoadAdapters will load adapters given the path and retransform widgets as needed.
+func LoadAdapters(findAdapters QueryFunc, path string) ([]Adapter, error) {
+	// Read the adapters file first
+	data, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		return nil, err
+	}
+
+	dir := filepath.Dir(path)
+
+	// And unmarshal the json to retrieve a list of adapters
+	var fileAdapters []Adapter
+	var dbAdapters []Adapter
+
+	if err := json.Unmarshal(data, &fileAdapters); err != nil {
+		return nil, err
+	}
+
+	// Retrieve persisted adapters
+	if err := findAdapters(All()).All(&dbAdapters); err != nil {
+		return nil, err
+	}
+
+	loadedAdapters := make([]Adapter, len(fileAdapters))
+
+	for i, adapter := range fileAdapters {
+		// Try to find it in the db
+		var existingCheckSum string
+		var transformedWidgets map[string]string
+		fileChecksum, err := adapter.computeWidgetsCheckSum(dir)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, dbAdapter := range dbAdapters {
+			if adapter.ID == dbAdapter.ID {
+				transformedWidgets = dbAdapter.Widgets
+				existingCheckSum, err = dbAdapter.computeWidgetsCheckSum(dir)
+
+				if err != nil {
+					return nil, err
+				}
+
+				break
+			}
+		}
+
+		if existingCheckSum != fileChecksum {
+			// Retransform widgets: it may take some time
+			if err := adapter.parseWidgets(dir); err != nil {
+				return nil, err
+			}
+		} else {
+			adapter.Widgets = transformedWidgets
+		}
+
+		// Always parse adapter commands
+		if err := adapter.parseCommands(); err != nil {
+			return nil, err
+		}
+
+		loadedAdapters[i] = adapter
+	}
+
+	return loadedAdapters, nil
+}
+
+func (adp *Adapter) validateConfig(config map[string]interface{}) error {
 	for ck := range adp.Config {
-		// TODO: type checking maybe...
+		// TODO: type checking
 		if config[ck] == nil {
 			return ErrDeviceConfigInvalid
 		}
@@ -34,8 +138,7 @@ func (adp *Adapter) ValidateConfig(config map[string]interface{}) error {
 	return nil
 }
 
-// ParseCommands parses all commands to a valid go text template ready to be use.
-func (adp *Adapter) ParseCommands() error {
+func (adp *Adapter) parseCommands() error {
 	commands := map[string]*template.Template{}
 
 	for k, v := range adp.Commands {
@@ -53,18 +156,34 @@ func (adp *Adapter) ParseCommands() error {
 	return nil
 }
 
-// ParseWidgets will transform jsx to valid js and replace the inner maps of widgets of this adapter.
-// It will use the given transform func to add additional data to the parsed widget string.
-func (adp *Adapter) ParseWidgets(transformWidget func(string) (string, error)) error {
+func transformWidget(widget string) (string, error) {
+	cmd := exec.Command("node", "-e", TransformScript, widget)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		return "", NewErrCommandFailed(cmd, err, stderr.String())
+	}
+
+	return fmt.Sprintf("function(device, command, showView) { return %s; }", strings.TrimSpace(stdout.String())), nil
+}
+
+func (adp *Adapter) parseWidgets(relativeDir string) error {
 	// Loop through each widgets in the json file and process them
 	for k, v := range adp.Widgets {
 		widgetStr := ""
 
 		// Check if we have to read file contents
-		if v[:1] == "<" {
+		if IsComponent(v) {
 			widgetStr = v
 		} else {
-			data, err := ioutil.ReadFile(v)
+			data, err := ioutil.ReadFile(filepath.Join(relativeDir, v))
 
 			if err != nil {
 				return err
@@ -91,7 +210,7 @@ func (adp *Adapter) getTemplateForCommand(command string) (*template.Template, e
 
 	// If not found, ensure the commands has been parsed
 	if tmpl == nil && adp.Commands[command] != "" {
-		if err := adp.ParseCommands(); err != nil {
+		if err := adp.parseCommands(); err != nil {
 			return nil, err
 		}
 		tmpl = adp.commandsParsed[command]

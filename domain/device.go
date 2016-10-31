@@ -43,7 +43,7 @@ func (device *Device) Rename(findDevices QueryFunc, newName string) error {
 
 // UpdateConfig updates the device configuration.
 func (device *Device) UpdateConfig(adapter *Adapter, config map[string]interface{}) error {
-	if err := adapter.ValidateConfig(config); err != nil {
+	if err := adapter.validateConfig(config); err != nil {
 		return err
 	}
 

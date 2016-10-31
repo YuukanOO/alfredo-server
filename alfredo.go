@@ -12,7 +12,6 @@ import (
 
 func main() {
 	var configPath string
-	var adaptersPath string
 
 	app := cli.NewApp()
 	app.Name = "alfredo"
@@ -26,12 +25,6 @@ func main() {
 			Value:       "./alfredo.toml",
 			Destination: &configPath,
 		},
-		cli.StringFlag{
-			Name:        "adapters, a",
-			Usage:       "Load adapters from json `FILE`",
-			Value:       "./adapters.json",
-			Destination: &adaptersPath,
-		},
 	}
 
 	app.Commands = []cli.Command{
@@ -44,27 +37,6 @@ func main() {
 				}
 
 				defer env.Cleanup()
-
-				// Now, we check if adapters have changed and must be reprocessed
-				sess, db := env.Current().Database.GetSession()
-				defer sess.Close()
-
-				// This block of code will update needed system settings
-				var settings env.SystemSettings
-
-				db.C(env.SystemCollection).Find(env.ByKey(env.EnvKey)).One(&settings)
-
-				settings.Key = env.EnvKey
-				settings.Version = env.Version
-
-				entries, err := env.LoadAdapters(settings.AdaptersCheckSum, adaptersPath)
-
-				if err != nil {
-					return err
-				}
-
-				settings.AdaptersCheckSum = entries.Checksum
-				db.C(env.SystemCollection).Upsert(env.ByKey(env.EnvKey), settings)
 
 				// And now the web server can launch
 				r := gin.Default()

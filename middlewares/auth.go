@@ -42,15 +42,26 @@ func Auth() gin.HandlerFunc {
 				claims, _ := token.Claims.(jwt.MapClaims)
 				idStr := claims["sub"].(string)
 
-				db := GetDB(c)
-				var controller domain.Controller
+				// db := GetDB(c)
+				// var controller domain.Controller
 
-				if err := db.C(env.ControllersCollection).FindId(bson.ObjectIdHex(idStr)).One(&controller); err != nil {
-					AbortWithError(c, http.StatusForbidden, err)
-				} else {
-					c.Set(controllerKey, &controller)
-					c.Next()
-				}
+				// Check if the controller exists in the db. The token is signed so it must exists but maybe in the future
+				// you will be able to blacklist tokens and so I check it right now.
+				// if err := db.C(env.ControllersCollection).FindId(bson.ObjectIdHex(idStr)).One(&controller); err != nil || controller.Token != tokenStr {
+				// 	if err != nil {
+				// 		AbortWithError(c, http.StatusForbidden, err)
+				// 	} else {
+				// 		c.AbortWithStatus(http.StatusForbidden)
+				// 	}
+				// } else {
+				// 	c.Set(controllerKey, &controller)
+				// 	c.Next()
+				// }
+
+				c.Set(controllerKey, &domain.Controller{
+					ID: bson.ObjectIdHex(idStr),
+				})
+				c.Next()
 			}
 		}
 	}

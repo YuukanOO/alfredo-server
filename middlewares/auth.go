@@ -4,18 +4,18 @@ import (
 	"net/http"
 	"strings"
 
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/YuukanOO/alfredo/domain"
 	"github.com/YuukanOO/alfredo/env"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"gopkg.in/mgo.v2/bson"
 )
 
-const authHeaderValue = "Authorization"
-const bearerHeaderValue = "Bearer "
-
-const controllerKey = "controller"
+const (
+	authHeaderValue   = "Authorization"
+	bearerHeaderValue = "Bearer "
+	controllerKey     = "controller"
+)
 
 // GetController retrieves the controller attached to this context
 func GetController(c *gin.Context) *domain.Controller {
@@ -42,10 +42,15 @@ func Auth() gin.HandlerFunc {
 				claims, _ := token.Claims.(jwt.MapClaims)
 				idStr := claims["sub"].(string)
 
-				c.Set(controllerKey, &domain.Controller{
-					ID: bson.ObjectIdHex(idStr),
-				})
-				c.Next()
+				db := GetDB(c)
+				var controller domain.Controller
+
+				if err := db.C(env.ControllersCollection).FindId(bson.ObjectIdHex(idStr)).One(&controller); err != nil {
+					AbortWithError(c, http.StatusForbidden, err)
+				} else {
+					c.Set(controllerKey, &controller)
+					c.Next()
+				}
 			}
 		}
 	}

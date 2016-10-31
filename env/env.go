@@ -64,7 +64,6 @@ func Current() Env {
 // LoadFromFile load a configuration from a toml file.
 func LoadFromFile(path string) error {
 	logrus.WithField("path", path).Info("Loading configuration")
-
 	_, err := toml.DecodeFile(path, &current)
 
 	if err != nil {
@@ -80,6 +79,8 @@ func LoadFromFile(path string) error {
 
 	logrus.SetLevel(logLevel)
 
+	// Connect to the database
+	logrus.WithField("urls", current.Database.Urls).Info("Connecting to the database")
 	session, err := mgo.Dial(strings.Join(current.Database.Urls, ","))
 
 	current.Database.session = session
@@ -88,7 +89,6 @@ func LoadFromFile(path string) error {
 	adaptersCollection := session.DB("").C(AdaptersCollection)
 
 	logrus.WithField("path", current.Server.AdaptersPath).Info("Loading adapters")
-
 	adapters, err := domain.LoadAdapters(adaptersCollection.Find, current.Server.AdaptersPath)
 
 	if err != nil {

@@ -20,7 +20,6 @@ func DB() gin.HandlerFunc {
 		defer session.Close()
 
 		c.Set(dbKey, db)
-
 		c.Next()
 	}
 }

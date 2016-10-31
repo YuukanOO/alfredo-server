@@ -127,7 +127,12 @@ func LoadAdapters(findAdapters QueryFunc, path string) ([]Adapter, error) {
 			adapter.Widgets = transformedWidgets
 		}
 
-		// Always parse adapter commands
+		// Check for command dependencies
+		if err := adapter.checkDependencies(); err != nil {
+			return nil, err
+		}
+
+		// Parse adapter commands
 		if err := adapter.parseCommands(); err != nil {
 			return nil, err
 		}
@@ -143,6 +148,16 @@ func (adp *Adapter) validateConfig(config map[string]interface{}) error {
 		// TODO: type checking
 		if config[ck] == nil {
 			return ErrDeviceConfigInvalid
+		}
+	}
+
+	return nil
+}
+
+func (adp *Adapter) checkDependencies() error {
+	for _, dep := range adp.Dependencies {
+		if _, err := exec.LookPath(dep); err != nil {
+			return err
 		}
 	}
 

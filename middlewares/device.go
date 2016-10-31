@@ -25,12 +25,9 @@ func Device() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusBadRequest)
 		} else {
 			db := GetDB(c)
-
 			var device domain.Device
 
-			err := db.C(env.DevicesCollection).FindId(id).One(&device)
-
-			if err != nil {
+			if err := db.C(env.DevicesCollection).FindId(id).One(&device); err != nil {
 				AbortWithError(c, http.StatusBadRequest, err)
 			} else {
 				c.Set(deviceKey, &device)

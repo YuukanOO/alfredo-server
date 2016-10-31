@@ -97,7 +97,7 @@ func getAllDevices(c *gin.Context) {
 
 	var devices []domain.Device
 
-	err := db.C(env.DevicesCollection).Find(bson.M{}).All(&devices)
+	err := db.C(env.DevicesCollection).Find(domain.All()).All(&devices)
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -174,9 +174,7 @@ func deviceExecuteCommand(c *gin.Context) {
 
 					middlewares.AbortWithError(c, http.StatusBadRequest, err)
 				} else {
-					logrus.WithFields(logrus.Fields{
-						"error": res.Err,
-					}).Warn("Command execution failed")
+					logrus.WithField("error", res.Err).Warn("Command execution failed")
 
 					c.JSON(http.StatusBadRequest, res)
 				}

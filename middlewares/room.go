@@ -25,12 +25,9 @@ func Room() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusBadRequest)
 		} else {
 			db := GetDB(c)
-
 			var room domain.Room
 
-			err := db.C(env.RoomsCollection).FindId(id).One(&room)
-
-			if err != nil {
+			if err := db.C(env.RoomsCollection).FindId(id).One(&room); err != nil {
 				AbortWithError(c, http.StatusNotFound, err)
 			} else {
 				c.Set(roomKey, &room)

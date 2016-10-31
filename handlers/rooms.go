@@ -3,8 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/YuukanOO/alfredo/domain"
 	"github.com/YuukanOO/alfredo/env"
 	"github.com/YuukanOO/alfredo/middlewares"
@@ -68,7 +66,7 @@ func getAllRooms(c *gin.Context) {
 
 	var rooms []domain.Room
 
-	err := db.C(env.RoomsCollection).Find(bson.M{}).All(&rooms)
+	err := db.C(env.RoomsCollection).Find(domain.All()).All(&rooms)
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)

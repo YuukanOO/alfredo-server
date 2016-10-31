@@ -29,23 +29,33 @@ type Adapter struct {
 	commandsParsed map[string]*template.Template
 }
 
+func getWidgetBytes(relativeDir string, entry string) ([]byte, error) {
+	if IsComponent(entry) {
+		return []byte(entry), nil
+	}
+
+	data, err := ioutil.ReadFile(filepath.Join(relativeDir, entry))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 func (adp *Adapter) computeWidgetsCheckSum(relativeDir string) (string, error) {
 	// Loaded from file, compute widgets checksum
 	if len(adp.WidgetsCheckSum) == 0 {
 		adp.WidgetsCheckSum = map[string]string{}
 
 		for k, wid := range adp.Widgets {
-			if IsComponent(wid) {
-				adp.WidgetsCheckSum[k] = ComputeCheckSum([]byte(wid))
-			} else {
-				data, err := ioutil.ReadFile(filepath.Join(relativeDir, wid))
+			data, err := getWidgetBytes(relativeDir, wid)
 
-				if err != nil {
-					return "", err
-				}
-
-				adp.WidgetsCheckSum[k] = ComputeCheckSum(data)
+			if err != nil {
+				return "", err
 			}
+
+			adp.WidgetsCheckSum[k] = ComputeCheckSum(data)
 		}
 	}
 
@@ -109,6 +119,7 @@ func LoadAdapters(findAdapters QueryFunc, path string) ([]Adapter, error) {
 
 		if existingCheckSum != fileChecksum {
 			// Retransform widgets: it may take some time
+			// TODO: Retransform only changed ones
 			if err := adapter.parseWidgets(dir); err != nil {
 				return nil, err
 			}
@@ -177,22 +188,14 @@ func transformWidget(widget string) (string, error) {
 func (adp *Adapter) parseWidgets(relativeDir string) error {
 	// Loop through each widgets in the json file and process them
 	for k, v := range adp.Widgets {
-		widgetStr := ""
-
 		// Check if we have to read file contents
-		if IsComponent(v) {
-			widgetStr = v
-		} else {
-			data, err := ioutil.ReadFile(filepath.Join(relativeDir, v))
+		data, err := getWidgetBytes(relativeDir, v)
 
-			if err != nil {
-				return err
-			}
-
-			widgetStr = string(data)
+		if err != nil {
+			return err
 		}
 
-		res, err := transformWidget(widgetStr)
+		res, err := transformWidget(string(data))
 
 		if err != nil {
 			return err

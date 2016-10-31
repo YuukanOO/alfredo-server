@@ -26,29 +26,30 @@ func createDevice(c *gin.Context) {
 	} else {
 		db := middlewares.GetDB(c)
 		var room domain.Room
+		var adapter domain.Adapter
 
-		err := db.C(env.RoomsCollection).FindId(params.RoomID).One(&room)
-
-		adapter := env.Current().GetAdapter(params.Adapter)
-
-		if err != nil || adapter == nil {
+		if err := db.C(env.RoomsCollection).FindId(params.RoomID).One(&room); err != nil {
 			c.AbortWithError(http.StatusNotFound, err)
 		} else {
-			devicesCollection := db.C(env.DevicesCollection)
-			device, err := room.RegisterDevice(devicesCollection.Find, params.Name, adapter, params.Config)
-
-			if err != nil {
-				middlewares.AbortWithError(c, http.StatusBadRequest, err)
+			if err := db.C(env.AdaptersCollection).FindId(params.Adapter).One(&adapter); err != nil {
+				c.AbortWithError(http.StatusNotFound, err)
 			} else {
-				// Upon device creation, try to execute a command named status
-				if outRes, _ := adapter.Execute(env.Current().Server.ShellCommand, "status", device, map[string]interface{}{}); outRes != nil {
-					device.UpdateStatus(outRes)
-				}
+				devicesCollection := db.C(env.DevicesCollection)
+				device, err := room.RegisterDevice(devicesCollection.Find, params.Name, &adapter, params.Config)
 
-				if err = devicesCollection.Insert(device); err != nil {
-					c.AbortWithError(http.StatusInternalServerError, err)
+				if err != nil {
+					middlewares.AbortWithError(c, http.StatusBadRequest, err)
 				} else {
-					c.JSON(http.StatusOK, device)
+					// Upon device creation, try to execute a command named status
+					if outRes, _ := adapter.Execute(env.Current().Server.ShellCommand, "status", device, map[string]interface{}{}); outRes != nil {
+						device.UpdateStatus(outRes)
+					}
+
+					if err = devicesCollection.Insert(device); err != nil {
+						c.AbortWithError(http.StatusInternalServerError, err)
+					} else {
+						c.JSON(http.StatusOK, device)
+					}
 				}
 			}
 		}
@@ -68,19 +69,23 @@ func updateDevice(c *gin.Context) {
 	} else {
 		db := middlewares.GetDB(c)
 		device := middlewares.GetDevice(c)
-		adapter := env.Current().GetAdapter(device.Adapter)
 		deviceCollection := db.C(env.DevicesCollection)
+		var adapter domain.Adapter
 
-		if err := device.Rename(deviceCollection.Find, params.Name); err != nil {
-			middlewares.AbortWithError(c, http.StatusBadRequest, err)
+		if err := db.C(env.AdaptersCollection).FindId(device.Adapter).One(&adapter); err != nil {
+			c.AbortWithError(http.StatusNotFound, err)
 		} else {
-			if err := device.UpdateConfig(adapter, params.Config); err != nil {
+			if err := device.Rename(deviceCollection.Find, params.Name); err != nil {
 				middlewares.AbortWithError(c, http.StatusBadRequest, err)
 			} else {
-				if err := deviceCollection.UpdateId(device.ID, device); err != nil {
-					c.AbortWithError(http.StatusInternalServerError, err)
+				if err := device.UpdateConfig(&adapter, params.Config); err != nil {
+					middlewares.AbortWithError(c, http.StatusBadRequest, err)
 				} else {
-					c.JSON(http.StatusOK, device)
+					if err := deviceCollection.UpdateId(device.ID, device); err != nil {
+						c.AbortWithError(http.StatusInternalServerError, err)
+					} else {
+						c.JSON(http.StatusOK, device)
+					}
 				}
 			}
 		}
@@ -143,11 +148,11 @@ func deviceExecuteCommand(c *gin.Context) {
 	} else {
 		db := middlewares.GetDB(c)
 		device := middlewares.GetDevice(c)
-		adapter := env.Current().GetAdapter(device.Adapter)
+		var adapter domain.Adapter
 		command := c.Param("device_command")
 
-		if adapter == nil {
-			c.AbortWithStatus(http.StatusInternalServerError)
+		if err := db.C(env.AdaptersCollection).FindId(device.Adapter).One(&adapter); err != nil {
+			c.AbortWithError(http.StatusNotFound, err)
 		} else {
 			// Executes the command
 			res, err := adapter.Execute(env.Current().Server.ShellCommand, command, device, commandParameters)

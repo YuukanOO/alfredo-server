@@ -52,9 +52,6 @@ type Env struct {
 	Server   *ServerConfig
 	Database *DatabaseConfig
 	Security *SecurityConfig
-	Adapters []*domain.Adapter
-
-	adaptersMap map[string]*domain.Adapter
 }
 
 var current Env
@@ -62,11 +59,6 @@ var current Env
 // Current retrieve the current environment.
 func Current() Env {
 	return current
-}
-
-// GetAdapter retrieves an adapter given its ID.
-func (env Env) GetAdapter(id string) *domain.Adapter {
-	return env.adaptersMap[id]
 }
 
 // LoadFromFile load a configuration from a toml file.

@@ -106,10 +106,10 @@ func LoadFromFile(path string) error {
 	// Adapters loaded, drop the collection and take the loaded ones
 	adaptersCollection.DropCollection()
 
-	adaptersToInsert := []interface{}{}
+	adaptersToInsert := make([]interface{}, len(adapters))
 
-	for _, adp := range adapters {
-		adaptersToInsert = append(adaptersToInsert, adp)
+	for i, adp := range adapters {
+		adaptersToInsert[i] = adp
 	}
 
 	if err := adaptersCollection.Insert(adaptersToInsert...); err != nil {

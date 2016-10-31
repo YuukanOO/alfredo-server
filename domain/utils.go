@@ -46,9 +46,6 @@ func SortedValues(sortedKeys []string, val map[string]string) []string {
 
 // GetBytes convert an arbitrary interface to a bytes representation.
 func GetBytes(data interface{}) ([]byte, error) {
-	gob.Register(map[string]interface{}{})
-	gob.Register(map[string]string{})
-
 	var buf bytes.Buffer
 
 	enc := gob.NewEncoder(&buf)

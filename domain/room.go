@@ -8,8 +8,8 @@ import (
 
 // Room represents a house room.
 type Room struct {
-	ID        bson.ObjectId `bson:"_id" json:"id"`
-	Name      string        `bson:"name" json:"name"`
+	ID        bson.ObjectId `bson:"_id" json:"id" validate:"required"`
+	Name      string        `bson:"name" json:"name" validate:"required"`
 	CreatedBy bson.ObjectId `bson:"created_by" json:"created_by"`
 	CreatedAt time.Time     `bson:"created_at" json:"created_at"`
 }
@@ -44,6 +44,10 @@ func (room *Room) RegisterDevice(
 
 	device := newDevice(room.ID, name, adapter.ID, config)
 
+	if err := validate.Struct(device); err != nil {
+		return nil, err
+	}
+
 	return device, nil
 }
 
@@ -53,7 +57,13 @@ func (room *Room) Rename(findRooms QueryFunc, newName string) error {
 		return ErrRoomNameAlreadyExists
 	}
 
+	oldName := room.Name
 	room.Name = newName
+
+	if err := validate.Struct(room); err != nil {
+		room.Name = oldName
+		return err
+	}
 
 	return nil
 }

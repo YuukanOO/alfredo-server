@@ -12,18 +12,16 @@ import (
 )
 
 type createDeviceParams struct {
-	Name    string `binding:"required"`
-	Adapter string `binding:"required"`
+	Name    string
+	Adapter string
 	Config  map[string]interface{}
-	RoomID  bson.ObjectId `json:"room_id" binding:"required"`
+	RoomID  bson.ObjectId `json:"room_id"`
 }
 
 func createDevice(c *gin.Context) {
 	var params createDeviceParams
 
-	if err := c.BindJSON(&params); err != nil {
-		middlewares.AbortWithError(c, http.StatusBadRequest, err)
-	} else {
+	if c.BindJSON(&params) == nil {
 		db := middlewares.GetDB(c)
 		var room domain.Room
 		var adapter domain.Adapter
@@ -41,7 +39,7 @@ func createDevice(c *gin.Context) {
 					middlewares.AbortWithError(c, http.StatusBadRequest, err)
 				} else {
 					// Upon device creation, try to execute a command named status
-					if outRes, _ := adapter.Execute(env.Current().Server.ShellCommand, "status", device, map[string]interface{}{}); outRes != nil {
+					if outRes, _ := adapter.Execute(env.Current().Server.ShellCommand, "status", *device, map[string]interface{}{}); outRes != nil {
 						device.UpdateStatus(outRes)
 					}
 
@@ -53,20 +51,20 @@ func createDevice(c *gin.Context) {
 				}
 			}
 		}
+	} else {
+		c.AbortWithStatus(http.StatusBadRequest)
 	}
 }
 
 type updateDeviceParams struct {
-	Name   string `binding:"required"`
+	Name   string
 	Config map[string]interface{}
 }
 
 func updateDevice(c *gin.Context) {
 	var params updateDeviceParams
 
-	if err := c.BindJSON(&params); err != nil {
-		middlewares.AbortWithError(c, http.StatusBadRequest, err)
-	} else {
+	if c.BindJSON(&params) == nil {
 		db := middlewares.GetDB(c)
 		device := middlewares.GetDevice(c)
 		deviceCollection := db.C(env.DevicesCollection)
@@ -89,6 +87,8 @@ func updateDevice(c *gin.Context) {
 				}
 			}
 		}
+	} else {
+		c.AbortWithStatus(http.StatusBadRequest)
 	}
 }
 
@@ -143,9 +143,7 @@ func removeDevice(c *gin.Context) {
 func deviceExecuteCommand(c *gin.Context) {
 	var commandParameters map[string]interface{}
 
-	if err := c.BindJSON(&commandParameters); err != nil {
-		middlewares.AbortWithError(c, http.StatusBadRequest, err)
-	} else {
+	if c.BindJSON(&commandParameters) == nil {
 		db := middlewares.GetDB(c)
 		device := middlewares.GetDevice(c)
 		var adapter domain.Adapter
@@ -155,9 +153,11 @@ func deviceExecuteCommand(c *gin.Context) {
 			c.AbortWithError(http.StatusNotFound, err)
 		} else {
 			// Executes the command
-			res, err := adapter.Execute(env.Current().Server.ShellCommand, command, device, commandParameters)
+			res, err := adapter.Execute(env.Current().Server.ShellCommand, command, *device, commandParameters)
 
 			if err == nil {
+				logrus.WithField("out", res.Out).Debug("Command success")
+
 				// If everything is good, update the device status given the execution result
 				// and returns the new device status.
 				device.UpdateStatus(res)
@@ -180,5 +180,7 @@ func deviceExecuteCommand(c *gin.Context) {
 				}
 			}
 		}
+	} else {
+		c.AbortWithStatus(http.StatusBadRequest)
 	}
 }

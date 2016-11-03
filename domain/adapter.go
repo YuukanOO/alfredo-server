@@ -157,7 +157,7 @@ func (adp *Adapter) validateConfig(config map[string]interface{}) error {
 func (adp *Adapter) checkDependencies() error {
 	for _, dep := range adp.Dependencies {
 		if _, err := exec.LookPath(dep); err != nil {
-			return err
+			return NewErrDependencyNotResolved(adp, dep, err)
 		}
 	}
 
@@ -171,7 +171,7 @@ func (adp *Adapter) parseCommands() error {
 		tmpl, err := template.New(k).Parse(v)
 
 		if err != nil {
-			return err
+			return NewErrParseCommandFailed(adp, k, err)
 		}
 
 		commands[k] = tmpl
@@ -194,7 +194,7 @@ func transformWidget(widget string) (string, error) {
 	err := cmd.Run()
 
 	if err != nil {
-		return "", NewErrCommandFailed(cmd, err, stderr.String())
+		return "", NewErrTransformWidgetFailed(err, stderr.String())
 	}
 
 	return fmt.Sprintf("function(device, command, showView) { return %s; }", strings.TrimSpace(stdout.String())), nil
@@ -243,7 +243,7 @@ func (adp *Adapter) getTemplateForCommand(command string) (*template.Template, e
 }
 
 // Execute an adapter command for the given device and parametrization.
-func (adp *Adapter) Execute(shell []string, command string, device *Device, params map[string]interface{}) (*ExecutionResult, error) {
+func (adp *Adapter) Execute(shell []string, command string, device Device, params map[string]interface{}) (*ExecutionResult, error) {
 	tmpl, err := adp.getTemplateForCommand(command)
 
 	if err != nil {

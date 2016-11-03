@@ -46,7 +46,7 @@ func main() {
 					AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 				}), middlewares.DB())
 
-				handlers.Register(r)
+				handlers.Routes(r)
 
 				return r.Run(env.Current().Server.Listen)
 			},

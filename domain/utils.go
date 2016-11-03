@@ -6,7 +6,12 @@ import (
 	"encoding/gob"
 	"fmt"
 	"sort"
+
+	"gopkg.in/go-playground/validator.v9"
 )
+
+// Validator for structs of the domain
+var validate = validator.New()
 
 // ComputeCheckSum computes the checksum of given data.
 func ComputeCheckSum(data []byte) string {

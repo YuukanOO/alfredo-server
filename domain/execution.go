@@ -6,13 +6,13 @@ import "bytes"
 type ExecutionContext struct {
 	Config  map[string]interface{}
 	Params  map[string]interface{}
-	Device  *Device
+	Device  Device
 	adapter *Adapter
 }
 
 func newExecutionContext(
 	adapter *Adapter,
-	device *Device,
+	device Device,
 	params map[string]interface{}) *ExecutionContext {
 	return &ExecutionContext{
 		Config:  device.Config,

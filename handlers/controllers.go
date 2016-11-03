@@ -10,7 +10,7 @@ import (
 )
 
 type registerControllerParams struct {
-	UID string `binding:"required"`
+	UID string
 }
 
 func registerController(c *gin.Context) {
@@ -19,9 +19,7 @@ func registerController(c *gin.Context) {
 	} else {
 		var params registerControllerParams
 
-		if err := c.BindJSON(&params); err != nil {
-			middlewares.AbortWithError(c, http.StatusBadRequest, err)
-		} else {
+		if c.BindJSON(&params) == nil {
 			db := middlewares.GetDB(c)
 			controllersCollection := db.C(env.ControllersCollection)
 
@@ -36,6 +34,8 @@ func registerController(c *gin.Context) {
 					c.JSON(http.StatusOK, controller.Token)
 				}
 			}
+		} else {
+			c.AbortWithStatus(http.StatusBadRequest)
 		}
 	}
 }

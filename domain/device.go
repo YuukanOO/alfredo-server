@@ -2,16 +2,17 @@ package domain
 
 import (
 	"encoding/json"
+	"strings"
 
 	"gopkg.in/mgo.v2/bson"
 )
 
 // Device represents a smart device connected to our system
 type Device struct {
-	ID      bson.ObjectId          `bson:"_id" json:"id"`
-	RoomID  bson.ObjectId          `bson:"room_id" json:"room_id"`
-	Name    string                 `bson:"name" json:"name"`
-	Adapter string                 `bson:"adapter" json:"adapter"`
+	ID      bson.ObjectId          `bson:"_id" json:"id" validate:"required"`
+	RoomID  bson.ObjectId          `bson:"room_id" json:"room_id" validate:"required"`
+	Name    string                 `bson:"name" json:"name" validate:"required"`
+	Adapter string                 `bson:"adapter" json:"adapter" validate:"required"`
 	Config  map[string]interface{} `bson:"config" json:"config"`
 	Status  interface{}            `bson:"status" json:"status"`
 }
@@ -36,7 +37,13 @@ func (device *Device) Rename(findDevices QueryFunc, newName string) error {
 		return ErrDeviceNameAlreadyExists
 	}
 
+	oldName := device.Name
 	device.Name = newName
+
+	if err := validate.Struct(device); err != nil {
+		device.Name = oldName
+		return err
+	}
 
 	return nil
 }
@@ -54,14 +61,17 @@ func (device *Device) UpdateConfig(adapter *Adapter, config map[string]interface
 
 // UpdateStatus updates the device status based on the givne execution result.
 func (device *Device) UpdateStatus(result *ExecutionResult) {
+	// TODO: Find why I have to do this
+	cleanResult := strings.Replace(strings.Trim(result.Out, "'"), "\\", "", -1)
+
 	// If the execution stdout result is empty, don't update the device status
-	if result.Out == "" {
+	if cleanResult == "" {
 		return
 	}
 
 	// For now, we just check if the output could be parsed into a json interface
-	if err := json.Unmarshal([]byte(result.Out), &device.Status); err != nil {
+	if err := json.Unmarshal([]byte(cleanResult), &device.Status); err != nil {
 		// If not, we revert to using just the result string as the new device status
-		device.Status = result.Out
+		device.Status = cleanResult
 	}
 }

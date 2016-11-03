@@ -10,15 +10,13 @@ import (
 )
 
 type createRoomParams struct {
-	Name string `binding:"required"`
+	Name string
 }
 
 func createRoom(c *gin.Context) {
 	var params createRoomParams
 
-	if err := c.BindJSON(&params); err != nil {
-		middlewares.AbortWithError(c, http.StatusBadRequest, err)
-	} else {
+	if c.BindJSON(&params) == nil {
 		controller := middlewares.GetController(c)
 		db := middlewares.GetDB(c)
 		roomsCollection := db.C(env.RoomsCollection)
@@ -34,15 +32,15 @@ func createRoom(c *gin.Context) {
 				c.JSON(http.StatusOK, room)
 			}
 		}
+	} else {
+		c.AbortWithStatus(http.StatusBadRequest)
 	}
 }
 
 func updateRoom(c *gin.Context) {
 	var params createRoomParams
 
-	if err := c.BindJSON(&params); err != nil {
-		middlewares.AbortWithError(c, http.StatusBadRequest, err)
-	} else {
+	if c.BindJSON(&params) == nil {
 		db := middlewares.GetDB(c)
 		room := middlewares.GetRoom(c)
 		roomsCollection := db.C(env.RoomsCollection)
@@ -58,6 +56,8 @@ func updateRoom(c *gin.Context) {
 				c.JSON(http.StatusOK, room)
 			}
 		}
+	} else {
+		c.AbortWithStatus(http.StatusBadRequest)
 	}
 }
 

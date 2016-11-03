@@ -7,9 +7,9 @@ import (
 
 // Controller represents a remote controller such as a phone.
 type Controller struct {
-	ID    bson.ObjectId `bson:"_id" json:"id"`
-	UID   string        `bson:"uid" json:"-"`
-	Token string        `bson:"token" json:"-"`
+	ID    bson.ObjectId `bson:"_id" json:"id" validate:"required"`
+	UID   string        `bson:"uid" json:"-" validate:"required"`
+	Token string        `bson:"token" json:"-" validate:"required"`
 }
 
 func newController(uid string) *Controller {
@@ -28,6 +28,10 @@ func (c *Controller) CreateRoom(findRooms QueryFunc, name string) (*Room, error)
 	}
 
 	room := newRoom(name, c.ID)
+
+	if err := validate.Struct(room); err != nil {
+		return nil, err
+	}
 
 	return room, nil
 }
@@ -59,6 +63,10 @@ func RegisterController(
 	}
 
 	controller.Token = tokenStr
+
+	if err := validate.Struct(controller); err != nil {
+		return nil, err
+	}
 
 	return controller, nil
 }

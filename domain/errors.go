@@ -18,17 +18,24 @@ var (
 
 // ErrTransformWidgetFailed when a widget transformation has failed
 type ErrTransformWidgetFailed struct {
-	Err    error
-	StdErr string
+	Adapter *Adapter
+	Err     error
+	StdErr  string
+	Widget  string
 }
 
 // NewErrTransformWidgetFailed instantiates a new ErrTransformWidgetFailed.
-func NewErrTransformWidgetFailed(err error, stderr string) error {
-	return &ErrTransformWidgetFailed{Err: err, StdErr: stderr}
+func NewErrTransformWidgetFailed(adapter *Adapter, widget string, err error, stderr string) error {
+	return &ErrTransformWidgetFailed{
+		Adapter: adapter,
+		Widget:  widget,
+		Err:     err,
+		StdErr:  stderr,
+	}
 }
 
 func (e ErrTransformWidgetFailed) Error() string {
-	return fmt.Sprintf("%s : %s", e.Err, e.StdErr)
+	return fmt.Sprintf("Adapter \"%s\" widget \"%s\" could not be transformed %s : %s", e.Adapter.Name, e.Widget, e.Err, e.StdErr)
 }
 
 // ErrDependencyNotResolved when an adapter dependency could not be resolved.

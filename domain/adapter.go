@@ -194,7 +194,7 @@ func transformWidget(widget string) (string, error) {
 	err := cmd.Run()
 
 	if err != nil {
-		return "", NewErrTransformWidgetFailed(err, stderr.String())
+		return stderr.String(), err
 	}
 
 	return fmt.Sprintf("function(device, command, showView) { return %s; }", strings.TrimSpace(stdout.String())), nil
@@ -213,7 +213,7 @@ func (adp *Adapter) parseWidgets(relativeDir string) error {
 		res, err := transformWidget(string(data))
 
 		if err != nil {
-			return err
+			return NewErrTransformWidgetFailed(adp, k, err, res)
 		}
 
 		adp.Widgets[k] = res

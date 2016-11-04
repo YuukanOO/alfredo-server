@@ -3,6 +3,8 @@ package env
 import (
 	"strings"
 
+	"path/filepath"
+
 	"github.com/BurntSushi/toml"
 	"github.com/Sirupsen/logrus"
 	"github.com/YuukanOO/alfredo/domain"
@@ -63,7 +65,9 @@ func Current() Env {
 
 // LoadFromFile load a configuration from a toml file.
 func LoadFromFile(path string) error {
-	logrus.WithField("path", path).Info("Loading configuration")
+	absPath, _ := filepath.Abs(path)
+	logrus.WithField("path", absPath).Info("Loading configuration")
+
 	_, err := toml.DecodeFile(path, &current)
 
 	if err != nil {
@@ -82,6 +86,10 @@ func LoadFromFile(path string) error {
 	// Connect to the database
 	logrus.WithField("urls", current.Database.Urls).Info("Connecting to the database")
 	session, err := mgo.Dial(strings.Join(current.Database.Urls, ","))
+
+	if err != nil {
+		return err
+	}
 
 	current.Database.session = session
 

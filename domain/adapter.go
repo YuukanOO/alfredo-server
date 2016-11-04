@@ -43,31 +43,6 @@ func getWidgetBytes(relativeDir string, entry string) ([]byte, error) {
 	return data, nil
 }
 
-func (adp *Adapter) computeWidgetsCheckSum(relativeDir string) (string, error) {
-	// Loaded from file, compute widgets checksum
-	if len(adp.WidgetsCheckSum) == 0 {
-		adp.WidgetsCheckSum = map[string]string{}
-
-		for k, wid := range adp.Widgets {
-			data, err := getWidgetBytes(relativeDir, wid)
-
-			if err != nil {
-				return "", err
-			}
-
-			adp.WidgetsCheckSum[k] = ComputeCheckSum(data)
-		}
-	}
-
-	data, err := GetBytes(SortedValues(SortedKeys(adp.WidgetsCheckSum), adp.WidgetsCheckSum))
-
-	if err != nil {
-		return "", err
-	}
-
-	return ComputeCheckSum(data), nil
-}
-
 // LoadAdapters will load adapters given the path and retransform widgets as needed.
 func LoadAdapters(findAdapters QueryFunc, path string) ([]Adapter, error) {
 	// Read the adapters file first
@@ -81,50 +56,44 @@ func LoadAdapters(findAdapters QueryFunc, path string) ([]Adapter, error) {
 
 	// And unmarshal the json to retrieve a list of adapters
 	var fileAdapters []Adapter
-	var dbAdapters []Adapter
 
 	if err := json.Unmarshal(data, &fileAdapters); err != nil {
-		return nil, err
-	}
-
-	// Retrieve persisted adapters
-	if err := findAdapters(All()).All(&dbAdapters); err != nil {
 		return nil, err
 	}
 
 	loadedAdapters := make([]Adapter, len(fileAdapters))
 
 	for i, adapter := range fileAdapters {
-		// Try to find it in the db
-		var existingCheckSum string
-		var transformedWidgets map[string]string
-		fileChecksum, err := adapter.computeWidgetsCheckSum(dir)
+		var dbAdapter Adapter
 
-		if err != nil {
-			return nil, err
-		}
+		findAdapters(ByIDStr(adapter.ID)).One(&dbAdapter)
 
-		for _, dbAdapter := range dbAdapters {
-			if adapter.ID == dbAdapter.ID {
-				transformedWidgets = dbAdapter.Widgets
-				existingCheckSum, err = dbAdapter.computeWidgetsCheckSum(dir)
+		adapter.WidgetsCheckSum = map[string]string{}
 
-				if err != nil {
-					return nil, err
-				}
+		// Compare checksums and retransforms widgets as needed
+		for wk, w := range adapter.Widgets {
+			// Compute file adapter checksum
+			data, err := getWidgetBytes(dir, w)
 
-				break
-			}
-		}
-
-		if existingCheckSum != fileChecksum {
-			// Retransform widgets: it may take some time
-			// TODO: Retransform only changed ones
-			if err := adapter.parseWidgets(dir); err != nil {
+			if err != nil {
 				return nil, err
 			}
-		} else {
-			adapter.Widgets = transformedWidgets
+
+			adapter.WidgetsCheckSum[wk] = ComputeCheckSum(data)
+
+			// And then compare, if they are different, transform the widget
+			if adapter.WidgetsCheckSum[wk] != dbAdapter.WidgetsCheckSum[wk] {
+				widgetStr := string(data)
+				widgetTransformed, err := transformWidget(widgetStr)
+
+				if err != nil {
+					return nil, newErrTransformWidgetFailed(&adapter, widgetStr, err, widgetTransformed)
+				}
+
+				adapter.Widgets[wk] = widgetTransformed
+			} else {
+				adapter.Widgets[wk] = dbAdapter.Widgets[wk]
+			}
 		}
 
 		// Check for command dependencies
@@ -157,7 +126,7 @@ func (adp *Adapter) validateConfig(config map[string]interface{}) error {
 func (adp *Adapter) checkDependencies() error {
 	for _, dep := range adp.Dependencies {
 		if _, err := exec.LookPath(dep); err != nil {
-			return NewErrDependencyNotResolved(adp, dep, err)
+			return newErrDependencyNotResolved(adp, dep, err)
 		}
 	}
 
@@ -171,7 +140,7 @@ func (adp *Adapter) parseCommands() error {
 		tmpl, err := template.New(k).Parse(v)
 
 		if err != nil {
-			return NewErrParseCommandFailed(adp, k, err)
+			return newErrParseCommandFailed(adp, k, err)
 		}
 
 		commands[k] = tmpl
@@ -198,28 +167,6 @@ func transformWidget(widget string) (string, error) {
 	}
 
 	return fmt.Sprintf("function(device, command, showView) { return %s; }", strings.TrimSpace(stdout.String())), nil
-}
-
-func (adp *Adapter) parseWidgets(relativeDir string) error {
-	// Loop through each widgets in the json file and process them
-	for k, v := range adp.Widgets {
-		// Check if we have to read file contents
-		data, err := getWidgetBytes(relativeDir, v)
-
-		if err != nil {
-			return err
-		}
-
-		res, err := transformWidget(string(data))
-
-		if err != nil {
-			return NewErrTransformWidgetFailed(adp, k, err, res)
-		}
-
-		adp.Widgets[k] = res
-	}
-
-	return nil
 }
 
 func (adp *Adapter) getTemplateForCommand(command string) (*template.Template, error) {

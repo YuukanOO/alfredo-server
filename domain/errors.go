@@ -24,8 +24,7 @@ type ErrTransformWidgetFailed struct {
 	Widget  string
 }
 
-// NewErrTransformWidgetFailed instantiates a new ErrTransformWidgetFailed.
-func NewErrTransformWidgetFailed(adapter *Adapter, widget string, err error, stderr string) error {
+func newErrTransformWidgetFailed(adapter *Adapter, widget string, err error, stderr string) error {
 	return &ErrTransformWidgetFailed{
 		Adapter: adapter,
 		Widget:  widget,
@@ -45,8 +44,7 @@ type ErrDependencyNotResolved struct {
 	Cmd     string
 }
 
-// NewErrDependencyNotResolved instantiates a new ErrDependencyNotResolved.
-func NewErrDependencyNotResolved(adapter *Adapter, dependency string, err error) error {
+func newErrDependencyNotResolved(adapter *Adapter, dependency string, err error) error {
 	return &ErrDependencyNotResolved{Err: err, Cmd: dependency, Adapter: adapter}
 }
 
@@ -61,8 +59,7 @@ type ErrParseCommandFailed struct {
 	Cmd     string
 }
 
-// NewErrParseCommandFailed instantiates a new ErrParseCommandFailed.
-func NewErrParseCommandFailed(adapter *Adapter, cmd string, err error) error {
+func newErrParseCommandFailed(adapter *Adapter, cmd string, err error) error {
 	return &ErrParseCommandFailed{Err: err, Cmd: cmd, Adapter: adapter}
 }
 

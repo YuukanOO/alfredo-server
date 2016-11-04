@@ -46,3 +46,10 @@ func ByRoomID(roomID bson.ObjectId) bson.M {
 		"room_id": roomID,
 	}
 }
+
+// ByIDStr finds an alements by its ID.
+func ByIDStr(id string) bson.M {
+	return bson.M{
+		"_id": id,
+	}
+}

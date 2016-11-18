@@ -13,8 +13,8 @@ func GetDB(c *gin.Context) *mgo.Database {
 	return c.MustGet(dbKey).(*mgo.Database)
 }
 
-// DB middleware which open and close a DB session for each request
-func DB() gin.HandlerFunc {
+// OpenDBHandle middleware which open and close a DB session for each request
+func OpenDBHandle() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session, db := env.Current().Database.GetSession()
 		defer session.Close()

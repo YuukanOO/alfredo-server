@@ -22,8 +22,8 @@ func GetController(c *gin.Context) *domain.Controller {
 	return c.MustGet(controllerKey).(*domain.Controller)
 }
 
-// Auth restrict access to valid tokens.
-func Auth() gin.HandlerFunc {
+// RequireAuth restrict access to valid tokens.
+func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.Request.Header.Get(authHeaderValue)
 

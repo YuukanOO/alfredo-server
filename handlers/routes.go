@@ -10,9 +10,9 @@ func Routes(eng *gin.Engine) {
 	eng.POST("/controllers", registerController)
 
 	// Require privileges
-	auth := eng.Group("", middlewares.Auth())
-	requireRoom := auth.Group("", middlewares.Room())
-	requireDevice := auth.Group("", middlewares.Device())
+	auth := eng.Group("", middlewares.RequireAuth())
+	requireRoom := auth.Group("", middlewares.RequireRoom())
+	requireDevice := auth.Group("", middlewares.RequireDevice())
 
 	auth.GET("/", getAlfredoSystemInfos)
 
@@ -30,6 +30,16 @@ func Routes(eng *gin.Engine) {
 	auth.GET("/devices", getAllDevices)
 	auth.POST("/devices", createDevice)
 	requireDevice.PUT("/devices/:device_id", updateDevice)
-	requireDevice.POST("/devices/:device_id/:device_command", deviceExecuteCommand)
+	requireDevice.PUT("/devices/:device_id/:device_command", deviceExecuteCommand)
 	requireDevice.DELETE("/devices/:device_id", removeDevice)
+}
+
+func waterfall(errors ...error) error {
+	for _, v := range errors {
+		if v != nil {
+			return v
+		}
+	}
+
+	return nil
 }

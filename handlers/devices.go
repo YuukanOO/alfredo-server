@@ -26,28 +26,27 @@ func createDevice(c *gin.Context) {
 		var room domain.Room
 		var adapter domain.Adapter
 
-		if err := db.C(env.RoomsCollection).FindId(params.RoomID).One(&room); err != nil {
+		if err := waterfall(
+			db.C(env.RoomsCollection).FindId(params.RoomID).One(&room),
+			db.C(env.AdaptersCollection).FindId(params.Adapter).One(&adapter),
+		); err != nil {
 			c.AbortWithError(http.StatusNotFound, err)
 		} else {
-			if err := db.C(env.AdaptersCollection).FindId(params.Adapter).One(&adapter); err != nil {
-				c.AbortWithError(http.StatusNotFound, err)
+			devicesCollection := db.C(env.DevicesCollection)
+			device, err := room.RegisterDevice(devicesCollection.Find, params.Name, &adapter, params.Config)
+
+			if err != nil {
+				middlewares.AbortWithError(c, http.StatusBadRequest, err)
 			} else {
-				devicesCollection := db.C(env.DevicesCollection)
-				device, err := room.RegisterDevice(devicesCollection.Find, params.Name, &adapter, params.Config)
+				// Upon device creation, try to execute a command named status
+				if outRes, _ := adapter.Execute(env.Current().Server.ShellCommand, "status", *device, map[string]interface{}{}); outRes != nil {
+					device.UpdateStatus(outRes)
+				}
 
-				if err != nil {
-					middlewares.AbortWithError(c, http.StatusBadRequest, err)
+				if err = devicesCollection.Insert(device); err != nil {
+					c.AbortWithError(http.StatusInternalServerError, err)
 				} else {
-					// Upon device creation, try to execute a command named status
-					if outRes, _ := adapter.Execute(env.Current().Server.ShellCommand, "status", *device, map[string]interface{}{}); outRes != nil {
-						device.UpdateStatus(outRes)
-					}
-
-					if err = devicesCollection.Insert(device); err != nil {
-						c.AbortWithError(http.StatusInternalServerError, err)
-					} else {
-						c.JSON(http.StatusOK, device)
-					}
+					c.JSON(http.StatusOK, device)
 				}
 			}
 		}
@@ -73,17 +72,17 @@ func updateDevice(c *gin.Context) {
 		if err := db.C(env.AdaptersCollection).FindId(device.Adapter).One(&adapter); err != nil {
 			c.AbortWithError(http.StatusNotFound, err)
 		} else {
-			if err := device.Rename(deviceCollection.Find, params.Name); err != nil {
+
+			if err := waterfall(
+				device.Rename(deviceCollection.Find, params.Name),
+				device.UpdateConfig(&adapter, params.Config),
+			); err != nil {
 				middlewares.AbortWithError(c, http.StatusBadRequest, err)
 			} else {
-				if err := device.UpdateConfig(&adapter, params.Config); err != nil {
-					middlewares.AbortWithError(c, http.StatusBadRequest, err)
+				if err := deviceCollection.UpdateId(device.ID, device); err != nil {
+					c.AbortWithError(http.StatusInternalServerError, err)
 				} else {
-					if err := deviceCollection.UpdateId(device.ID, device); err != nil {
-						c.AbortWithError(http.StatusInternalServerError, err)
-					} else {
-						c.JSON(http.StatusOK, device)
-					}
+					c.JSON(http.StatusOK, device)
 				}
 			}
 		}
@@ -97,9 +96,7 @@ func getAllDevices(c *gin.Context) {
 
 	var devices []domain.Device
 
-	err := db.C(env.DevicesCollection).Find(domain.All()).All(&devices)
-
-	if err != nil {
+	if err := db.C(env.DevicesCollection).Find(domain.All()).All(&devices); err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	} else {
 		if devices == nil {
@@ -116,9 +113,7 @@ func getRoomDevices(c *gin.Context) {
 
 	var devices []domain.Device
 
-	err := db.C(env.DevicesCollection).Find(domain.ByRoomID(room.ID)).All(&devices)
-
-	if err != nil {
+	if err := db.C(env.DevicesCollection).Find(domain.ByRoomID(room.ID)).All(&devices); err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	} else {
 		if devices == nil {

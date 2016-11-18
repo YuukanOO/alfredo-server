@@ -16,8 +16,8 @@ func GetRoom(c *gin.Context) *domain.Room {
 	return c.MustGet(roomKey).(*domain.Room)
 }
 
-// Room middleware used to ensure a valid room_id has been given
-func Room() gin.HandlerFunc {
+// RequireRoom middleware used to ensure a valid room_id has been given
+func RequireRoom() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := bson.ObjectIdHex(c.Param("room_id"))
 

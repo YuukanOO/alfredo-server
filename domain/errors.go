@@ -5,6 +5,12 @@ import (
 	"fmt"
 )
 
+// TODO
+type DomainError struct {
+	Code    string
+	Message string
+}
+
 var (
 	// ErrAdapterCommandNotFound is thrown when a command could not be processed by an adapter.
 	ErrAdapterCommandNotFound = errors.New("AdapterCommandNotFound")

@@ -45,9 +45,7 @@ func updateRoom(c *gin.Context) {
 		room := middlewares.GetRoom(c)
 		roomsCollection := db.C(env.RoomsCollection)
 
-		err := room.Rename(roomsCollection.Find, params.Name)
-
-		if err != nil {
+		if err := room.Rename(roomsCollection.Find, params.Name); err != nil {
 			middlewares.AbortWithError(c, http.StatusBadRequest, err)
 		} else {
 			if err := roomsCollection.UpdateId(room.ID, room); err != nil {

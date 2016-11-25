@@ -3,16 +3,12 @@ package domain
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
 )
-
-// TransformScript represents the script used to transform jsx
-const TransformScript = "console.log(require('babel-core').transform(process.argv[1], { plugins: ['transform-react-jsx', 'transform-es2015-arrow-functions'],}).code);"
 
 // Adapter represents an available smart adapter.
 type Adapter struct {
@@ -27,20 +23,6 @@ type Adapter struct {
 	WidgetsCheckSum map[string]string `json:"-" bson:"widgets_checksum"`
 
 	commandsParsed map[string]*template.Template
-}
-
-func getWidgetBytes(relativeDir string, entry string) ([]byte, error) {
-	if IsComponent(entry) {
-		return []byte(entry), nil
-	}
-
-	data, err := ioutil.ReadFile(filepath.Join(relativeDir, entry))
-
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
 }
 
 // LoadAdapters will load adapters given the path and retransform widgets as needed.
@@ -79,7 +61,7 @@ func LoadAdapters(findAdapters QueryFunc, path string) ([]Adapter, error) {
 				return nil, err
 			}
 
-			adapter.WidgetsCheckSum[wk] = ComputeCheckSum(data)
+			adapter.WidgetsCheckSum[wk] = computeCheckSum(data)
 
 			// And then compare, if they are different, transform the widget
 			if adapter.WidgetsCheckSum[wk] != dbAdapter.WidgetsCheckSum[wk] {
@@ -158,24 +140,6 @@ func (adp *Adapter) parseCommands() error {
 	adp.commandsParsed = commands
 
 	return nil
-}
-
-func transformWidget(widget string) (string, error) {
-	cmd := exec.Command("node", "-e", TransformScript, widget)
-
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	if err != nil {
-		return stderr.String(), err
-	}
-
-	return fmt.Sprintf("function(device, command, showView) { return %s; }", strings.TrimSpace(stdout.String())), nil
 }
 
 func (adp *Adapter) getTemplateForCommand(command string) (*template.Template, error) {

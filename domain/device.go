@@ -31,10 +31,18 @@ func newDevice(
 	}
 }
 
+func validateDeviceName(findDevices QueryFunc, roomID bson.ObjectId, name string) error {
+	if count, _ := findDevices(And(ByName(name), ByRoomID(roomID))).Count(); count > 0 {
+		return ErrDeviceNameAlreadyExists
+	}
+
+	return nil
+}
+
 // Rename a device.
 func (device *Device) Rename(findDevices QueryFunc, newName string) error {
-	if count, _ := findDevices(ByName(newName)).Count(); count > 0 {
-		return ErrDeviceNameAlreadyExists
+	if err := validateDeviceName(findDevices, device.RoomID, newName); err != nil {
+		return err
 	}
 
 	oldName := device.Name

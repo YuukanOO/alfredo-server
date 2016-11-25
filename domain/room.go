@@ -30,8 +30,8 @@ func (room *Room) RegisterDevice(
 	adapter *Adapter,
 	config map[string]interface{}) (*Device, error) {
 
-	if count, _ := findDevices(ByName(name)).Count(); count > 0 {
-		return nil, ErrDeviceNameAlreadyExists
+	if err := validateDeviceName(findDevices, room.ID, name); err != nil {
+		return nil, err
 	}
 
 	// First, validates the config by looking each needed adapter config values
@@ -49,10 +49,18 @@ func (room *Room) RegisterDevice(
 	return device, nil
 }
 
+func validateRoomName(findRooms QueryFunc, name string) error {
+	if count, _ := findRooms(ByName(name)).Count(); count > 0 {
+		return ErrRoomNameAlreadyExists
+	}
+
+	return nil
+}
+
 // Rename a room and check for duplicates.
 func (room *Room) Rename(findRooms QueryFunc, newName string) error {
-	if count, _ := findRooms(ByName(newName)).Count(); count > 0 {
-		return ErrRoomNameAlreadyExists
+	if err := validateRoomName(findRooms, newName); err != nil {
+		return err
 	}
 
 	oldName := room.Name

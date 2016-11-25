@@ -51,7 +51,7 @@ func (room *Room) RegisterDevice(
 
 func validateRoomName(findRooms QueryFunc, name string) error {
 	if count, _ := findRooms(ByName(name)).Count(); count > 0 {
-		return ErrRoomNameAlreadyExists
+		return errRoomNameAlreadyExists
 	}
 
 	return nil

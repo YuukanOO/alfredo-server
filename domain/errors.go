@@ -1,19 +1,67 @@
 package domain
 
-import (
-	"errors"
-	"fmt"
+import "fmt"
+
+import "bytes"
+
+const (
+	// AdapterCommandNotFound is thrown when a command could not be processed by an adapter.
+	AdapterCommandNotFound = iota
+	// RoomNameAlreadyExists is thrown when a room already exists with the same name.
+	RoomNameAlreadyExists
+	// DeviceNameAlreadyExists is thrown when a device with the same name already exists.
+	DeviceNameAlreadyExists
+	// DeviceConfigInvalid is thrown when a device config is invalid.
+	DeviceConfigInvalid
 )
 
+// FieldError to describe errors affecting one field.
+type FieldError struct {
+	Resource string
+	Field    string
+	Code     string
+}
+
+func (e *FieldError) Error() string {
+	return fmt.Sprintf("%s validation failed for %s with the code %s", e.Resource, e.Field, e.Code)
+}
+
+// Error of the domain
+type Error struct {
+	Err     error
+	Message string
+	Code    int
+}
+
+func newError(code int, message string, innerError error) error {
+	return &Error{
+		Code:    code,
+		Message: message,
+		Err:     innerError,
+	}
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf("%v: %s", e.Code, e.Message)
+}
+
+// MultipleErrors is used when multiple errors should be returned.
+type MultipleErrors []error
+
+func (e MultipleErrors) Error() string {
+	var buf bytes.Buffer
+
+	for _, v := range e {
+		fmt.Fprintf(&buf, "%s\n", v.Error())
+	}
+
+	return buf.String()
+}
+
 var (
-	// ErrAdapterCommandNotFound is thrown when a command could not be processed by an adapter.
-	ErrAdapterCommandNotFound = errors.New("AdapterCommandNotFound")
-	// ErrRoomNameAlreadyExists is thrown when a room already exists with the same name.
-	ErrRoomNameAlreadyExists = errors.New("RoomNameAlreadyExists")
-	// ErrDeviceNameAlreadyExists is thrown when a device with the same name already exists.
-	ErrDeviceNameAlreadyExists = errors.New("DeviceNameAlreadyExists")
-	// ErrDeviceConfigInvalid is thrown when a device config is invalid.
-	ErrDeviceConfigInvalid = errors.New("DeviceConfigInvalid")
+	errAdapterCommandNotFound  = newError(AdapterCommandNotFound, "Adapter command not found", nil)
+	errRoomNameAlreadyExists   = newError(RoomNameAlreadyExists, "Room name already exists", nil)
+	errDeviceNameAlreadyExists = newError(DeviceNameAlreadyExists, "Device name already exists", nil)
 )
 
 // ErrTransformWidgetFailed when a widget transformation has failed

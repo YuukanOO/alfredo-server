@@ -95,21 +95,20 @@ func LoadAdapters(findAdapters QueryFunc, path string) ([]Adapter, error) {
 }
 
 func (adp *Adapter) validateConfig(config map[string]interface{}) error {
-	// errors := make([]FieldError, len(adp.Config))
-	// errorsCount := 0
+	errors := make(MultipleErrors, len(adp.Config))
+	errorsCount := 0
 
 	for ck := range adp.Config {
 		// TODO: type checking
 		if config[ck] == nil {
-			// errors[errorsCount] = newFieldError("Device", "config."+ck, errCodeRequired)
-			// errorsCount++
-			return ErrDeviceConfigInvalid
+			errors[errorsCount] = &FieldError{Resource: "Adapter", Field: "config." + ck, Code: "required"}
+			errorsCount++
 		}
 	}
 
-	// if errorsCount > 0 {
-	// 	return newErrDeviceConfigInvalid(errors[:errorsCount])
-	// }
+	if errorsCount > 0 {
+		return newError(DeviceConfigInvalid, "Invalid device configuration", errors[:errorsCount])
+	}
 
 	return nil
 }
@@ -156,7 +155,7 @@ func (adp *Adapter) getTemplateForCommand(command string) (*template.Template, e
 
 	// If still null, then the command does not exists in this adapter
 	if tmpl == nil {
-		return nil, ErrAdapterCommandNotFound
+		return nil, errAdapterCommandNotFound
 	}
 
 	return tmpl, nil

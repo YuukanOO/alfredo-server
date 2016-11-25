@@ -33,7 +33,7 @@ func newDevice(
 
 func validateDeviceName(findDevices QueryFunc, roomID bson.ObjectId, name string) error {
 	if count, _ := findDevices(And(ByName(name), ByRoomID(roomID))).Count(); count > 0 {
-		return ErrDeviceNameAlreadyExists
+		return errDeviceNameAlreadyExists
 	}
 
 	return nil

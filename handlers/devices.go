@@ -36,7 +36,7 @@ func createDevice(c *gin.Context) {
 			device, err := room.RegisterDevice(devicesCollection.Find, params.Name, &adapter, params.Config)
 
 			if err != nil {
-				middlewares.AbortWithError(c, http.StatusBadRequest, err)
+				c.JSON(http.StatusBadRequest, err)
 			} else {
 				// Upon device creation, try to execute a command named status
 				if outRes, _ := adapter.Execute(env.Current().Server.ShellCommand, "status", *device, map[string]interface{}{}); outRes != nil {

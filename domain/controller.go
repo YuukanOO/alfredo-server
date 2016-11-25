@@ -21,9 +21,7 @@ func newController(uid string) *Controller {
 
 // CreateRoom tries to create a new room for this controller.
 func (c *Controller) CreateRoom(findRooms QueryFunc, name string) (*Room, error) {
-	var existingRoom Room
-
-	if err := findRooms(ByName(name)).One(&existingRoom); err == nil {
+	if count, _ := findRooms(ByName(name)).Count(); count > 0 {
 		return nil, ErrRoomNameAlreadyExists
 	}
 

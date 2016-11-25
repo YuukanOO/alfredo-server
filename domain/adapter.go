@@ -113,12 +113,21 @@ func LoadAdapters(findAdapters QueryFunc, path string) ([]Adapter, error) {
 }
 
 func (adp *Adapter) validateConfig(config map[string]interface{}) error {
+	// errors := make([]FieldError, len(adp.Config))
+	// errorsCount := 0
+
 	for ck := range adp.Config {
 		// TODO: type checking
 		if config[ck] == nil {
+			// errors[errorsCount] = newFieldError("Device", "config."+ck, errCodeRequired)
+			// errorsCount++
 			return ErrDeviceConfigInvalid
 		}
 	}
+
+	// if errorsCount > 0 {
+	// 	return newErrDeviceConfigInvalid(errors[:errorsCount])
+	// }
 
 	return nil
 }

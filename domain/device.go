@@ -33,7 +33,7 @@ func newDevice(
 
 // Rename a device.
 func (device *Device) Rename(findDevices QueryFunc, newName string) error {
-	if err := findDevices(ByName(newName)); err == nil {
+	if count, _ := findDevices(ByName(newName)).Count(); count > 0 {
 		return ErrDeviceNameAlreadyExists
 	}
 

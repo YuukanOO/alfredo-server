@@ -17,6 +17,9 @@ type Device struct {
 	Status  interface{}            `bson:"status" json:"status"`
 }
 
+// ErrDeviceNameAlreadyExists when a device with this name already exists.
+const ErrDeviceNameAlreadyExists = "ErrDeviceNameAlreadyExists"
+
 func newDevice(
 	room bson.ObjectId,
 	name string,
@@ -33,7 +36,11 @@ func newDevice(
 
 func validateDeviceName(findDevices QueryFunc, roomID bson.ObjectId, name string) error {
 	if count, _ := findDevices(And(ByName(name), ByRoomID(roomID))).Count(); count > 0 {
-		return errDeviceNameAlreadyExists
+		return newError(ErrDeviceNameAlreadyExists, "Device name already exists", &FieldError{
+			Code:     "already_exists",
+			Field:    "name",
+			Resource: "Device",
+		})
 	}
 
 	return nil

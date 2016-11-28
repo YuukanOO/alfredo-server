@@ -4,17 +4,6 @@ import "fmt"
 
 import "bytes"
 
-const (
-	// AdapterCommandNotFound is thrown when a command could not be processed by an adapter.
-	AdapterCommandNotFound = iota
-	// RoomNameAlreadyExists is thrown when a room already exists with the same name.
-	RoomNameAlreadyExists
-	// DeviceNameAlreadyExists is thrown when a device with the same name already exists.
-	DeviceNameAlreadyExists
-	// DeviceConfigInvalid is thrown when a device config is invalid.
-	DeviceConfigInvalid
-)
-
 // FieldError to describe errors affecting one field.
 type FieldError struct {
 	Resource string
@@ -30,10 +19,10 @@ func (e *FieldError) Error() string {
 type Error struct {
 	Err     error
 	Message string
-	Code    int
+	Code    string
 }
 
-func newError(code int, message string, innerError error) error {
+func newError(code string, message string, innerError error) error {
 	return &Error{
 		Code:    code,
 		Message: message,
@@ -42,75 +31,35 @@ func newError(code int, message string, innerError error) error {
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("%v: %s", e.Code, e.Message)
+	return fmt.Sprintf("%s\n\t%s", e.Message, e.Err)
 }
 
-// MultipleErrors is used when multiple errors should be returned.
+// MultipleErrors is used when multiple errors should be returned such as validation ones.
 type MultipleErrors []error
 
 func (e MultipleErrors) Error() string {
 	var buf bytes.Buffer
 
 	for _, v := range e {
-		fmt.Fprintf(&buf, "%s\n", v.Error())
+		fmt.Fprintf(&buf, "%s\n", v)
 	}
 
 	return buf.String()
 }
 
-var (
-	errAdapterCommandNotFound  = newError(AdapterCommandNotFound, "Adapter command not found", nil)
-	errRoomNameAlreadyExists   = newError(RoomNameAlreadyExists, "Room name already exists", nil)
-	errDeviceNameAlreadyExists = newError(DeviceNameAlreadyExists, "Device name already exists", nil)
-)
-
-// ErrTransformWidgetFailed when a widget transformation has failed
-type ErrTransformWidgetFailed struct {
-	Adapter *Adapter
+// AdapterError represents error related to an adapter.
+type AdapterError struct {
+	Adapter Adapter
 	Err     error
-	StdErr  string
-	Widget  string
 }
 
-func newErrTransformWidgetFailed(adapter *Adapter, widget string, err error, stderr string) error {
-	return &ErrTransformWidgetFailed{
-		Adapter: adapter,
-		Widget:  widget,
+func newAdapterError(Adapter Adapter, err error) error {
+	return &AdapterError{
+		Adapter: Adapter,
 		Err:     err,
-		StdErr:  stderr,
 	}
 }
 
-func (e ErrTransformWidgetFailed) Error() string {
-	return fmt.Sprintf("Adapter \"%s\" widget \"%s\" could not be transformed %s : %s", e.Adapter.Name, e.Widget, e.Err, e.StdErr)
-}
-
-// ErrDependencyNotResolved when an adapter dependency could not be resolved.
-type ErrDependencyNotResolved struct {
-	Adapter *Adapter
-	Err     error
-	Cmd     string
-}
-
-func newErrDependencyNotResolved(adapter *Adapter, dependency string, err error) error {
-	return &ErrDependencyNotResolved{Err: err, Cmd: dependency, Adapter: adapter}
-}
-
-func (e ErrDependencyNotResolved) Error() string {
-	return fmt.Sprintf("Adapter \"%s\" dependency \"%s\" could not be resolved : %s", e.Adapter.Name, e.Cmd, e.Err)
-}
-
-// ErrParseCommandFailed when an adapter command could not be parsed.
-type ErrParseCommandFailed struct {
-	Adapter *Adapter
-	Err     error
-	Cmd     string
-}
-
-func newErrParseCommandFailed(adapter *Adapter, cmd string, err error) error {
-	return &ErrParseCommandFailed{Err: err, Cmd: cmd, Adapter: adapter}
-}
-
-func (e ErrParseCommandFailed) Error() string {
-	return fmt.Sprintf("Adapter \"%s\" command \"%s\" could not be parsed : %s", e.Adapter.Name, e.Cmd, e.Err)
+func (e *AdapterError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Adapter.Name, e.Err)
 }

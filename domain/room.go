@@ -14,6 +14,9 @@ type Room struct {
 	CreatedAt time.Time     `bson:"created_at" json:"created_at"`
 }
 
+// ErrRoomNameAlreadyExists is thrown where a room name already exists.
+const ErrRoomNameAlreadyExists = "ErrRoomNameAlreadyExists"
+
 func newRoom(name string, controller bson.ObjectId) *Room {
 	return &Room{
 		ID:        bson.NewObjectId(),
@@ -51,7 +54,11 @@ func (room *Room) RegisterDevice(
 
 func validateRoomName(findRooms QueryFunc, name string) error {
 	if count, _ := findRooms(ByName(name)).Count(); count > 0 {
-		return errRoomNameAlreadyExists
+		return newError(ErrRoomNameAlreadyExists, "Room name already exists", &FieldError{
+			Code:     "already_exists",
+			Field:    "name",
+			Resource: "Room",
+		})
 	}
 
 	return nil

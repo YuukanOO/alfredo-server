@@ -25,6 +25,19 @@ type Adapter struct {
 	commandsParsed map[string]*template.Template
 }
 
+const (
+	// ErrAdapterCommandNotFound when an adapter command could not be found for execution.
+	ErrAdapterCommandNotFound = "ErrAdapterCommandNotFound"
+	// ErrDeviceConfigInvalid when a device config does not match the related adapter settings.
+	ErrDeviceConfigInvalid = "ErrDeviceConfigInvalid"
+	// ErrTransformWidgetFailed when a widget could not have been transformed by the system.
+	ErrTransformWidgetFailed = "ErrTransformWidgetFailed"
+	// ErrDependencyNotResolved when an adapter dependency could not be resolved.
+	ErrDependencyNotResolved = "ErrDependencyNotResolved"
+	// ErrParseCommandFailed when a command could not be parsed.
+	ErrParseCommandFailed = "ErrParseCommandFailed"
+)
+
 // LoadAdapters will load adapters given the path and retransform widgets as needed.
 func LoadAdapters(findAdapters QueryFunc, path string) ([]Adapter, error) {
 	// Read the adapters file first
@@ -69,7 +82,7 @@ func LoadAdapters(findAdapters QueryFunc, path string) ([]Adapter, error) {
 				widgetTransformed, err := transformWidget(widgetStr)
 
 				if err != nil {
-					return nil, newErrTransformWidgetFailed(&adapter, widgetStr, err, widgetTransformed)
+					return nil, newAdapterError(adapter, newError(ErrTransformWidgetFailed, widgetTransformed, err))
 				}
 
 				adapter.Widgets[wk] = widgetTransformed
@@ -107,7 +120,7 @@ func (adp *Adapter) validateConfig(config map[string]interface{}) error {
 	}
 
 	if errorsCount > 0 {
-		return newError(DeviceConfigInvalid, "Invalid device configuration", errors[:errorsCount])
+		return newError(ErrDeviceConfigInvalid, "Invalid device configuration", errors[:errorsCount])
 	}
 
 	return nil
@@ -116,7 +129,7 @@ func (adp *Adapter) validateConfig(config map[string]interface{}) error {
 func (adp *Adapter) checkDependencies() error {
 	for _, dep := range adp.Dependencies {
 		if _, err := exec.LookPath(dep); err != nil {
-			return newErrDependencyNotResolved(adp, dep, err)
+			return newAdapterError(*adp, newError(ErrDependencyNotResolved, "Dependency not found "+dep, err))
 		}
 	}
 
@@ -130,7 +143,7 @@ func (adp *Adapter) parseCommands() error {
 		tmpl, err := template.New(k).Parse(v)
 
 		if err != nil {
-			return newErrParseCommandFailed(adp, k, err)
+			return newAdapterError(*adp, newError(ErrParseCommandFailed, "Parse failed for command "+k, err))
 		}
 
 		commands[k] = tmpl
@@ -155,7 +168,7 @@ func (adp *Adapter) getTemplateForCommand(command string) (*template.Template, e
 
 	// If still null, then the command does not exists in this adapter
 	if tmpl == nil {
-		return nil, errAdapterCommandNotFound
+		return nil, newError(ErrAdapterCommandNotFound, "Adapter command not found", nil)
 	}
 
 	return tmpl, nil

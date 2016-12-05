@@ -3,12 +3,14 @@ package domain
 import "fmt"
 
 import "bytes"
+import "gopkg.in/go-playground/validator.v9"
+import "reflect"
 
 // FieldError to describe errors affecting one field.
 type FieldError struct {
-	Resource string
-	Field    string
-	Code     string
+	Resource string `json:"resource"`
+	Field    string `json:"field"`
+	Code     string `json:"code"`
 }
 
 func (e *FieldError) Error() string {
@@ -17,9 +19,9 @@ func (e *FieldError) Error() string {
 
 // Error of the domain
 type Error struct {
-	Err     error
-	Message string
-	Code    string
+	Err     error  `json:"errors"`
+	Message string `json:"message"`
+	Code    string `json:"code"`
 }
 
 func newError(code string, message string, innerError error) error {
@@ -62,4 +64,43 @@ func newAdapterError(Adapter Adapter, err error) error {
 
 func (e *AdapterError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Adapter.Name, e.Err)
+}
+
+// ErrValidationFailed represents a validation error
+const ErrValidationFailed = "ErrValidationFailed"
+
+func newValidationErrors(resource interface{}, err error) error {
+	valErrors, ok := err.(validator.ValidationErrors)
+
+	if !ok {
+		return newError(ErrValidationFailed, "Validation failed", err)
+	}
+
+	res := reflect.ValueOf(resource)
+
+	// If pointer get the underlying element≤
+	for res.Kind() == reflect.Ptr {
+		res = res.Elem()
+	}
+
+	resType := res.Type()
+
+	retErrors := make(MultipleErrors, len(valErrors))
+
+	for i, curErr := range valErrors {
+		fieldName := curErr.Field()
+		field, ok := resType.FieldByName(fieldName)
+
+		if ok {
+			fieldName = field.Tag.Get("bson")
+		}
+
+		retErrors[i] = &FieldError{
+			Resource: resType.Name(),
+			Field:    fieldName,
+			Code:     curErr.ActualTag(),
+		}
+	}
+
+	return newError(ErrValidationFailed, "Validation failed", retErrors)
 }

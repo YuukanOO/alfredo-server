@@ -46,7 +46,7 @@ func (room *Room) RegisterDevice(
 	device := newDevice(room.ID, name, adapter.ID, config)
 
 	if err := validate.Struct(device); err != nil {
-		return nil, err
+		return nil, newValidationErrors(device, err)
 	}
 
 	return device, nil
@@ -75,7 +75,7 @@ func (room *Room) Rename(findRooms QueryFunc, newName string) error {
 
 	if err := validate.Struct(room); err != nil {
 		room.Name = oldName
-		return err
+		return newValidationErrors(room, err)
 	}
 
 	return nil

@@ -26,7 +26,7 @@ func registerController(c *gin.Context) {
 			controller, err := domain.RegisterController(controllersCollection.Find, []byte(env.Current().Security.Secret), params.UID)
 
 			if err != nil {
-				middlewares.AbortWithError(c, http.StatusBadRequest, err)
+				c.JSON(http.StatusBadRequest, err)
 			} else {
 				if _, err = controllersCollection.UpsertId(controller.ID, controller); err != nil {
 					c.AbortWithError(http.StatusInternalServerError, err)

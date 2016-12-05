@@ -28,7 +28,7 @@ func (c *Controller) CreateRoom(findRooms QueryFunc, name string) (*Room, error)
 	room := newRoom(name, c.ID)
 
 	if err := validate.Struct(room); err != nil {
-		return nil, err
+		return nil, newValidationErrors(room, err)
 	}
 
 	return room, nil
@@ -63,7 +63,7 @@ func RegisterController(
 	controller.Token = tokenStr
 
 	if err := validate.Struct(controller); err != nil {
-		return nil, err
+		return nil, newValidationErrors(controller, err)
 	}
 
 	return controller, nil

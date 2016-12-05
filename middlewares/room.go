@@ -28,7 +28,7 @@ func RequireRoom() gin.HandlerFunc {
 			var room domain.Room
 
 			if err := db.C(env.RoomsCollection).FindId(id).One(&room); err != nil {
-				AbortWithError(c, http.StatusNotFound, err)
+				c.AbortWithError(http.StatusNotFound, err)
 			} else {
 				c.Set(roomKey, &room)
 				c.Next()

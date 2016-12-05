@@ -28,7 +28,7 @@ func RequireDevice() gin.HandlerFunc {
 			var device domain.Device
 
 			if err := db.C(env.DevicesCollection).FindId(id).One(&device); err != nil {
-				AbortWithError(c, http.StatusBadRequest, err)
+				c.AbortWithError(http.StatusNotFound, err)
 			} else {
 				c.Set(deviceKey, &device)
 				c.Next()

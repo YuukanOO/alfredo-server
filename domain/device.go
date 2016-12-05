@@ -57,7 +57,7 @@ func (device *Device) Rename(findDevices QueryFunc, newName string) error {
 
 	if err := validate.Struct(device); err != nil {
 		device.Name = oldName
-		return err
+		return newValidationErrors(device, err)
 	}
 
 	return nil

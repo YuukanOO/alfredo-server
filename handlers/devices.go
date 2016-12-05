@@ -77,7 +77,7 @@ func updateDevice(c *gin.Context) {
 				device.Rename(deviceCollection.Find, params.Name),
 				device.UpdateConfig(&adapter, params.Config),
 			); err != nil {
-				middlewares.AbortWithError(c, http.StatusBadRequest, err)
+				c.JSON(http.StatusBadRequest, err)
 			} else {
 				if err := deviceCollection.UpdateId(device.ID, device); err != nil {
 					c.AbortWithError(http.StatusInternalServerError, err)
@@ -167,7 +167,7 @@ func deviceExecuteCommand(c *gin.Context) {
 				if res == nil {
 					logrus.WithError(err).Error("Command execution failed")
 
-					middlewares.AbortWithError(c, http.StatusBadRequest, err)
+					c.JSON(http.StatusBadRequest, err)
 				} else {
 					logrus.WithField("error", res.Err).Warn("Command execution failed")
 

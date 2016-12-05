@@ -24,7 +24,7 @@ func createRoom(c *gin.Context) {
 		room, err := controller.CreateRoom(roomsCollection.Find, params.Name)
 
 		if err != nil {
-			middlewares.AbortWithError(c, http.StatusBadRequest, err)
+			c.JSON(http.StatusBadRequest, err)
 		} else {
 			if err = roomsCollection.Insert(room); err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
@@ -46,7 +46,7 @@ func updateRoom(c *gin.Context) {
 		roomsCollection := db.C(env.RoomsCollection)
 
 		if err := room.Rename(roomsCollection.Find, params.Name); err != nil {
-			middlewares.AbortWithError(c, http.StatusBadRequest, err)
+			c.JSON(http.StatusBadRequest, err)
 		} else {
 			if err := roomsCollection.UpdateId(room.ID, room); err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)

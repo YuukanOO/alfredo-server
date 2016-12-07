@@ -17,7 +17,7 @@ func getAdapters(c *gin.Context) {
 	err := db.C(env.AdaptersCollection).Find(domain.All()).All(&adapters)
 
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.Error(err)
 	} else {
 		if adapters == nil {
 			adapters = []domain.Adapter{}

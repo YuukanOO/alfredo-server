@@ -44,7 +44,7 @@ func main() {
 				r.Use(middlewares.CORS(&middlewares.CORSOptions{
 					AllowedOrigins: env.Current().Server.AllowedOrigins,
 					AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
-				}), middlewares.OpenDBHandle())
+				}), middlewares.OpenDBHandle(), middlewares.FormatErrors())
 
 				handlers.Routes(r)
 

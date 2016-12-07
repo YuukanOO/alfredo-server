@@ -19,17 +19,26 @@ func (e *FieldError) Error() string {
 
 // Error of the domain
 type Error struct {
-	Err     error  `json:"errors"`
-	Message string `json:"message"`
-	Code    string `json:"code"`
+	Err     MultipleErrors `json:"errors"`
+	Message string         `json:"message"`
+	Code    string         `json:"code"`
 }
 
 func newError(code string, message string, innerError error) error {
-	return &Error{
+	retErr := &Error{
 		Code:    code,
 		Message: message,
-		Err:     innerError,
 	}
+
+	// We must always returns an instance of MultipleErrors so the format will be easier
+	switch innerError.(type) {
+	case MultipleErrors:
+		retErr.Err = innerError.(MultipleErrors)
+	default:
+		retErr.Err = MultipleErrors{innerError}
+	}
+
+	return retErr
 }
 
 func (e *Error) Error() string {

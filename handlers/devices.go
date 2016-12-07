@@ -30,7 +30,7 @@ func createDevice(c *gin.Context) {
 			db.C(env.RoomsCollection).FindId(params.RoomID).One(&room),
 			db.C(env.AdaptersCollection).FindId(params.Adapter).One(&adapter),
 		); err != nil {
-			c.AbortWithError(http.StatusNotFound, err)
+			c.Error(err)
 		} else {
 			devicesCollection := db.C(env.DevicesCollection)
 			device, err := room.RegisterDevice(devicesCollection.Find, params.Name, &adapter, params.Config)
@@ -44,14 +44,12 @@ func createDevice(c *gin.Context) {
 				}
 
 				if err = devicesCollection.Insert(device); err != nil {
-					c.AbortWithError(http.StatusInternalServerError, err)
+					c.Error(err)
 				} else {
 					c.JSON(http.StatusOK, device)
 				}
 			}
 		}
-	} else {
-		c.AbortWithStatus(http.StatusBadRequest)
 	}
 }
 
@@ -70,7 +68,7 @@ func updateDevice(c *gin.Context) {
 		var adapter domain.Adapter
 
 		if err := db.C(env.AdaptersCollection).FindId(device.Adapter).One(&adapter); err != nil {
-			c.AbortWithError(http.StatusNotFound, err)
+			c.Error(err)
 		} else {
 
 			if err := waterfall(
@@ -80,14 +78,12 @@ func updateDevice(c *gin.Context) {
 				c.JSON(http.StatusBadRequest, err)
 			} else {
 				if err := deviceCollection.UpdateId(device.ID, device); err != nil {
-					c.AbortWithError(http.StatusInternalServerError, err)
+					c.Error(err)
 				} else {
 					c.JSON(http.StatusOK, device)
 				}
 			}
 		}
-	} else {
-		c.AbortWithStatus(http.StatusBadRequest)
 	}
 }
 
@@ -97,7 +93,7 @@ func getAllDevices(c *gin.Context) {
 	var devices []domain.Device
 
 	if err := db.C(env.DevicesCollection).Find(domain.All()).All(&devices); err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.Error(err)
 	} else {
 		if devices == nil {
 			devices = []domain.Device{}
@@ -114,7 +110,7 @@ func getRoomDevices(c *gin.Context) {
 	var devices []domain.Device
 
 	if err := db.C(env.DevicesCollection).Find(domain.ByRoomID(room.ID)).All(&devices); err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.Error(err)
 	} else {
 		if devices == nil {
 			devices = []domain.Device{}
@@ -129,7 +125,7 @@ func removeDevice(c *gin.Context) {
 	device := middlewares.GetDevice(c)
 
 	if err := db.C(env.DevicesCollection).RemoveId(device.ID); err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.Error(err)
 	} else {
 		c.AbortWithStatus(http.StatusOK)
 	}
@@ -145,7 +141,7 @@ func deviceExecuteCommand(c *gin.Context) {
 		command := c.Param("device_command")
 
 		if err := db.C(env.AdaptersCollection).FindId(device.Adapter).One(&adapter); err != nil {
-			c.AbortWithError(http.StatusNotFound, err)
+			c.Error(err)
 		} else {
 			// Executes the command
 			res, err := adapter.Execute(env.Current().Server.ShellCommand, command, *device, commandParameters)
@@ -158,7 +154,7 @@ func deviceExecuteCommand(c *gin.Context) {
 				device.UpdateStatus(res)
 
 				if err := db.C(env.DevicesCollection).UpdateId(device.ID, device); err != nil {
-					c.AbortWithError(http.StatusInternalServerError, err)
+					c.Error(err)
 				} else {
 					c.JSON(http.StatusOK, device.Status)
 				}
@@ -175,7 +171,5 @@ func deviceExecuteCommand(c *gin.Context) {
 				}
 			}
 		}
-	} else {
-		c.AbortWithStatus(http.StatusBadRequest)
 	}
 }

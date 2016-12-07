@@ -24,16 +24,14 @@ func createRoom(c *gin.Context) {
 		room, err := controller.CreateRoom(roomsCollection.Find, params.Name)
 
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err)
+			c.Error(err)
 		} else {
 			if err = roomsCollection.Insert(room); err != nil {
-				c.AbortWithError(http.StatusInternalServerError, err)
+				c.Error(err)
 			} else {
 				c.JSON(http.StatusOK, room)
 			}
 		}
-	} else {
-		c.AbortWithStatus(http.StatusBadRequest)
 	}
 }
 
@@ -49,13 +47,11 @@ func updateRoom(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, err)
 		} else {
 			if err := roomsCollection.UpdateId(room.ID, room); err != nil {
-				c.AbortWithError(http.StatusInternalServerError, err)
+				c.Error(err)
 			} else {
 				c.JSON(http.StatusOK, room)
 			}
 		}
-	} else {
-		c.AbortWithStatus(http.StatusBadRequest)
 	}
 }
 
@@ -67,7 +63,7 @@ func getAllRooms(c *gin.Context) {
 	err := db.C(env.RoomsCollection).Find(domain.All()).All(&rooms)
 
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.Error(err)
 	} else {
 		if rooms == nil {
 			rooms = []domain.Room{}
@@ -82,7 +78,7 @@ func removeRoom(c *gin.Context) {
 	room := middlewares.GetRoom(c)
 
 	if err := db.C(env.RoomsCollection).RemoveId(room.ID); err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.Error(err)
 	} else {
 		c.AbortWithStatus(http.StatusOK)
 	}

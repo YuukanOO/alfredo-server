@@ -26,16 +26,14 @@ func registerController(c *gin.Context) {
 			controller, err := domain.RegisterController(controllersCollection.Find, []byte(env.Current().Security.Secret), params.UID)
 
 			if err != nil {
-				c.JSON(http.StatusBadRequest, err)
+				c.Error(err)
 			} else {
 				if _, err = controllersCollection.UpsertId(controller.ID, controller); err != nil {
-					c.AbortWithError(http.StatusInternalServerError, err)
+					c.Error(err)
 				} else {
 					c.JSON(http.StatusOK, controller.Token)
 				}
 			}
-		} else {
-			c.AbortWithStatus(http.StatusBadRequest)
 		}
 	}
 }

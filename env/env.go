@@ -8,6 +8,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/Sirupsen/logrus"
 	"github.com/YuukanOO/alfredo/domain"
+	"github.com/gin-gonic/gin"
 	"gopkg.in/mgo.v2"
 )
 
@@ -82,6 +83,10 @@ func LoadFromFile(path string) error {
 	}
 
 	logrus.SetLevel(logLevel)
+
+	if logLevel != logrus.DebugLevel {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	// Connect to the database
 	logrus.WithField("urls", current.Database.Urls).Info("Connecting to the database")

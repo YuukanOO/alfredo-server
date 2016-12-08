@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/YuukanOO/alfredo/env"
 	"github.com/YuukanOO/alfredo/handlers"
 	"github.com/YuukanOO/alfredo/middlewares"
@@ -47,6 +48,8 @@ func main() {
 				}), middlewares.OpenDBHandle(), middlewares.FormatErrors())
 
 				handlers.Routes(r)
+
+				logrus.WithField("host", env.Current().Server.Listen).Info("Listening")
 
 				return r.Run(env.Current().Server.Listen)
 			},

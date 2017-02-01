@@ -21,3 +21,7 @@ When it's done, run it with:
 ```
 alfredo -c TOML_CONFIG_FILE run
 ```
+
+## Development
+
+Alfredo is behavior driven therefore godog is needed to run the spec files. To install godog, simply get it using `go get github.com/DATA-DOG/godog/cmd/godog`.

@@ -24,4 +24,10 @@ alfredo -c TOML_CONFIG_FILE run
 
 ## Development
 
-Alfredo is behavior driven therefore godog is needed to run the spec files. To install godog, simply get it using `go get github.com/DATA-DOG/godog/cmd/godog`.
+### Code organization
+
+Alfredo is build around Domain Driven Design development.
+
+- `app/`: Contains all code related to the web app,
+- `identity/`: Identity and access context related to security,
+- `registry/`: Registry context represents a house registry of all connected devices,

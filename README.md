@@ -24,10 +24,18 @@ alfredo -c TOML_CONFIG_FILE run
 
 ## Development
 
+```
+mkdir -p $GOPATH/src/github.com/YuukanOO
+cd $GOPATH/src/github.com/YuukanOO
+git clone https://github.com/YuukanOO/alfredo-server.git alfredo
+cd $GOPATH/src/github.com/YuukanOO/alfredo
+go get ./...
+```
+
 ### Code organization
 
 Alfredo is build around Domain Driven Design development.
 
-- `app/`: Contains all code related to the web app,
+- `webapp/`: Contains all code related to the web app,
 - `identity/`: Identity and access context related to security,
 - `registry/`: Registry context represents a house registry of all connected devices,

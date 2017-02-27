@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/YuukanOO/alfredo/webapp"
 	"github.com/urfave/cli"
 )
 
@@ -28,7 +29,7 @@ func main() {
 			Name:  "run",
 			Usage: "Starts the alfredo server",
 			Action: func(c *cli.Context) error {
-				return nil
+				return webapp.Serve(configPath)
 			},
 		},
 	}

@@ -1,0 +1,1 @@
+go install ./... && alfredo -c alfredo.local.toml run

@@ -12,6 +12,9 @@ type UserRegistered struct {
 	password string
 }
 
+// UserActivated event when a user has been activated.
+type UserActivated struct{}
+
 // User is the base resource related to user management.
 // For now, a user has full access to alfredo.
 type User struct {
@@ -19,6 +22,7 @@ type User struct {
 
 	ID       bson.ObjectId `bson:"_id" json:"id"`
 	Email    string        `json:"email"`
+	Active   bool          `json:"active"`
 	Password string        `json:"-"`
 }
 
@@ -34,6 +38,11 @@ func newUser(email, password string) *User {
 	return usr
 }
 
+// Activate this user so he can access and control the house now.
+func (u *User) Activate() {
+	eventsourcing.TrackChange(u, UserActivated{})
+}
+
 // Transition from a state to another.
 func (u *User) Transition(evt eventsourcing.Event) {
 	switch e := evt.(type) {
@@ -41,5 +50,8 @@ func (u *User) Transition(evt eventsourcing.Event) {
 		u.ID = e.ID
 		u.Email = e.Email
 		u.Password = e.password
+		u.Active = false
+	case UserActivated:
+		u.Active = true
 	}
 }

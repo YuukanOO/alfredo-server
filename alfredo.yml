@@ -1,0 +1,82 @@
+swagger: 2.0
+info:
+  title: Alfredo REST API
+  description: Alfredo server REST API definition used by client applications.
+  version: 1.0.0
+host: localhost:5000
+schemes:
+  - http
+produces:
+  - application/json
+consumes:
+  - application/json
+paths:
+  /sessions:
+    post:
+      description: Authenticates a device with the server.
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              controller_id:
+                type: string
+      responses:
+        201:
+          description: Successfuly authenticated with the server
+          schema:
+            type: string
+            description: JWT token which must be passed to each request in order to authenticate the device.
+  /controllers:
+    post:
+      description: Register a new controller on this server.
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ControllerCommand'
+      responses:
+        201:
+          description: Controller created
+          schema:
+            $ref: '#/definitions/Controller'
+  /controllers/{id}:
+    delete:
+      description: Deletes a controller.
+      parameters:
+        - $ref: '#/parameters/id'
+
+parameters:
+  id:
+    name: id
+    type: string
+    in: path
+    required: true
+
+definitions:
+  ControllerCommand:
+    type: object
+    description: Command used to create/update a controller.
+    properties:
+      id:
+        type: string
+        description: Unique identifier used to identify this controller.
+      name:
+        type: string
+        description: Friendly name for this controller.
+  Controller:
+    type: object
+    description: Represents a controller (a client) use to give orders to alfredo.
+    properties:
+      id:
+        type: string
+        description: Unique identifier used to identify this controller.
+      name:
+        type: string
+        description: Friendly name for this controller.
+      active:
+        type: boolean
+        description: Wether or not this controller has been granted access to this server.
